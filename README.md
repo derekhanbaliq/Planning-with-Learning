@@ -29,6 +29,15 @@ cd examples
 python waypoint_follow.py  # check f1tenth_gym is working
 ```
 
+To run [cleanrl](https://github.com/vwxyzjn/cleanrl) for studying, config a new env for the cloned repo. **Please check the repo for detailed instruction.**  
+```bash
+conda create -n clean-rl python=3.8
+conda activate clean-rl
+pip install -r requirements/requirements.txt  # for cartpole only
+python cleanrl/ppo.py --seed 1 --env-id CartPole-v0 --total-timesteps 50000 --capture_video  # cd ./videos for visualized results
+tensorboard --logdir runs  # open another terminal to see the training process
+```
+
 ## Usage
 
 TBD
