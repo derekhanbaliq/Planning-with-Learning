@@ -25,8 +25,7 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 Test your environment.
 ```bash
 python test.py  # check if cuda is available
-cd examples
-python waypoint_follow.py  # check f1tenth_gym is working
+python main.py  # check if f1tenth_gym is working
 ```
 
 To run [cleanrl](https://github.com/vwxyzjn/cleanrl) for studying, config a new env for the cloned repo. **Please check the repo for detailed instruction.**  

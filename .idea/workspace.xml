@@ -5,15 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d727f57b-69a3-4230-8e70-00fa64089e34" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/waypoint_loader.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/config_example_map.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/example_map.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/example_map.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/example_waypoints.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/waypoint_follow.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
