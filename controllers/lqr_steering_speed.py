@@ -7,7 +7,7 @@
 
 import numpy as np
 import math
-from utils.utils import calc_nearest_point, pi_2_pi
+from controllers.lqr_steering import calc_nearest_point, pi_2_pi
 
 
 class CarState:

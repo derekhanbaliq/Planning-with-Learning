@@ -15,6 +15,7 @@ from utils.waypoint_loader import WaypointLoader
 from controllers.pure_pursuit import PurePursuit
 from controllers.lqr_steering import LQRSteeringController
 from controllers.lqr_steering_speed import LQRSteeringSpeedController
+from utils.rl_utils import get_ref_traj_in_horizon
 from utils.render import Renderer
 
 
@@ -51,6 +52,15 @@ def main():
     # log_obs = []
 
     while not done:
+        traj = get_ref_traj_in_horizon(obs, waypoints, predict_time=2)
+        # TODO: visualize traj in gui
+        # TODO: downsample traj to a fixed num - horizon
+        # TODO: lidar scan & h-traj -> NN -> lateral offsets
+        # TODO: interpolate the offsets for every waypoint in traj -> get offsetted traj in frenet frame
+        # TODO: transform it into world frame
+        # TODO: extract lookahead point
+        # TODO: modify PP, input lookahead point, output steering & speed
+
         steering, speed = controller.control(obs)  # each agent’s current observation
         print("steering = {}, speed = {}".format(round(steering, 5), speed))
         # log_action.append([lap_time, steering, speed])

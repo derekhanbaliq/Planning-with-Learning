@@ -24,7 +24,7 @@ class PurePursuit:
         self.currPos = np.array([self.currX, self.currY]).reshape((1, 2))
 
         # Find closest waypoint to where we are
-        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints))
+        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints,))
         self.closest_index = np.argmin(self.distances)
 
         # Find target point

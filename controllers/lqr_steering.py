@@ -7,23 +7,7 @@
 
 import numpy as np
 import math
-from utils.utils import calc_nearest_point, pi_2_pi
-
-
-class Waypoint:
-    def __init__(self, map_name, csv_data=None):
-        if map_name == 'Spielberg' or map_name == 'MoscowRaceway' or map_name == 'Catalunya':
-            self.x = csv_data[:, 1]
-            self.y = csv_data[:, 2]
-            self.v = csv_data[:, 5]
-            self.θ = csv_data[:, 3]  # coordinate matters!
-            self.γ = csv_data[:, 4]
-        elif map_name == 'example' or map_name == 'icra' or map_name == 'levine':
-            self.x = csv_data[:, 1]
-            self.y = csv_data[:, 2]
-            self.v = csv_data[:, 5]
-            self.θ = csv_data[:, 3] + math.pi / 2  # coordinate matters!
-            self.γ = csv_data[:, 4]
+from numba import njit
 
 
 class CarState:
@@ -231,3 +215,47 @@ class LQRSteeringController:
         e_θ = self.x.e_θ
 
         return np.array([e_l, e_θ])
+
+
+@njit(cache=True)
+def calc_nearest_point(point, trajectory):
+    """
+    Return the nearest point along the given piecewise linear trajectory.
+
+    Same as nearest_point_on_line_segment, but vectorized. This method is quite fast, time constraints should
+    not be an issue so long as trajectories are not insanely long.
+
+        Order of magnitude: trajectory length: 1000 --> 0.0002 second computation (5000fps)
+
+    point: size 2 numpy array
+    trajectory: Nx2 matrix of (x,y) trajectory waypoints
+        - these must be unique. If they are not unique, a divide by 0 error will destroy the world
+    """
+    diffs = trajectory[1:, :] - trajectory[:-1, :]  # piecewise distances y between every 2 points
+    l2s = diffs[:, 0] ** 2 + diffs[:, 1] ** 2
+
+    # this is equivalent to the elementwise dot product
+    # dots = np.sum((point - trajectory[:-1,:]) * diffs[:,:], axis=1)
+    dots = np.empty((trajectory.shape[0] - 1,))
+    for i in range(dots.shape[0]):
+        dots[i] = np.dot((point - trajectory[i, :]), diffs[i, :])  # =|x|*|y|*cos(θ), x is curr pos to waypoint i
+
+    t = dots / l2s  # =|x|*cos(θ)/|y| project vector x on vector y, as projection proportion
+    t[t < 0.0] = 0.0  # x & y have 90° angle or more
+    t[t > 1.0] = 1.0  # x & y have 45° angle or less
+    # t = np.clip(dots / l2s, 0.0, 1.0)
+
+    projections = trajectory[:-1, :] + (t * diffs.T).T  # |x|*cos(θ) on waypoint i -- x's projection on y
+    # dists = np.linalg.norm(point - projections, axis=1)
+    dists = np.empty((projections.shape[0],))
+    for i in range(dists.shape[0]):
+        temp = point - projections[i]  # vector
+        dists[i] = np.sqrt(np.sum(temp * temp))  # distance between current point and waypoint
+    index = np.argmin(dists)  # get index of min distance
+
+    return projections[index], dists[index], t[index], index
+
+
+@njit(cache=True)
+def pi_2_pi(angle):
+    return (angle + math.pi) % (2 * math.pi) - math.pi
