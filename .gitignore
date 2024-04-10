@@ -1,5 +1,5 @@
 .idea/*
-__pycache__
+__pycache__/*
 examples/*
 gym/f110_gym.egg-info
 *.pyc
