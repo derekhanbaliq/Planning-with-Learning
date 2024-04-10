@@ -44,7 +44,7 @@ def main():
     env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map', map_ext='.png', num_agents=1)  # .pgm
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_traj) # render the reference trajectory
+    env.add_render_callback(renderer.render_traj)  # render the reference trajectory
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
     obs, _, done, _ = env.reset(init_pos)
@@ -58,14 +58,10 @@ def main():
         front_traj = get_front_traj(obs, waypoints, predict_time=2)  # [i, x, y, v]
         print(front_traj.shape)
 
-        # TODO: visualize traj in gui - Biao
-
-        # TODO: interpolate traj to a fixed num - horizon - Derek
         horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
         print(horizon_traj.shape)
-        
-        # update the reference trajectory for rendering
-        renderer.traj = front_traj
+
+        renderer.traj = horizon_traj  # update the reference trajectory for rendering
 
         # TODO: lidar scan & h-traj -> PPO -> lateral offsets !!!!
         offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
