@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
+from scipy.interpolate import interp1d
 
 
 def downsample(data, observation_shape, downsampling_method):
@@ -14,8 +15,10 @@ def downsample(data, observation_shape, downsampling_method):
     return processed_data
 
 
-def get_ref_traj_in_horizon(obs, waypoints, predict_time=2):
-    waypoints = np.array([waypoints.x, waypoints.y]).T
+def get_front_traj(obs, profile, predict_time=2):
+    waypoints = np.array([profile.x, profile.y]).T
+    ref_speed = profile.v
+    # ref_curvature = profile.γ
     num_waypoints = waypoints.shape[0]
 
     cur_x = obs['poses_x'][0]  # ego vehicle
@@ -25,20 +28,33 @@ def get_ref_traj_in_horizon(obs, waypoints, predict_time=2):
     distances = distance.cdist(cur_pos, waypoints, 'euclidean').reshape((num_waypoints,))
     closest_index = np.argmin(distances)
     # print(closest_index, waypoints[closest_index])
-    predict_dist = obs['linear_vels_x'][0] * predict_time  # use current speed, cuz future movement is subject to change
-    # print(predict_dist)
 
     traj = []
     i = closest_index
-    dist = distances[closest_index]  # accumulated distance
-    while dist < predict_dist:
+    t = profile.unit_dist / ref_speed[i]  # accumulated time
+    while t < predict_time:
         # suppose anti-clockwise
-        prev_i = i
         i = 0 if i == num_waypoints - 1 else i + 1
-        dist += np.linalg.norm(waypoints[i] - waypoints[prev_i])
-        traj.append(np.hstack((i, waypoints[i])))
+        t += profile.unit_dist / ref_speed[i]  # i -> i + 1
+        traj.append(np.hstack((i, waypoints[i], ref_speed[i])))
 
     traj = np.array(traj)
-    print(traj.shape)
 
     return traj
+
+
+def get_interpolated_traj_with_horizon(traj, h):
+    len = traj.shape[0]
+    steps = np.linspace(start=1, stop=len, num=len, endpoint=False)
+
+    h_traj = []
+    for i in range(1, traj.shape[1]):  # x, y, v
+        val = traj[:, i]
+        interp_func = interp1d(steps, val.flatten(), kind='cubic')
+        new_steps = np.linspace(start=1, stop=len, num=h, endpoint=False)
+        new_val = interp_func(new_steps)
+        h_traj.append(new_val)
+    h_traj = np.array(h_traj).T
+
+    return h_traj
+

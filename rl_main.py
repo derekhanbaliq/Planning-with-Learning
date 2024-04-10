@@ -1,5 +1,5 @@
 """
-    main application of controllers
+    main application for RL planner
     Author: Derek Zhou
     References: https://f1tenth-gym.readthedocs.io/en/v1.0.0/api/obv.html
                 https://github.com/f1tenth/f1tenth_gym/tree/main/examples
@@ -15,7 +15,7 @@ from utils.waypoint_loader import WaypointLoader
 from controllers.pure_pursuit import PurePursuit
 from controllers.lqr_steering import LQRSteeringController
 from controllers.lqr_steering_speed import LQRSteeringSpeedController
-from utils.rl_utils import get_ref_traj_in_horizon
+from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon
 from utils.render import Renderer
 
 
@@ -51,15 +51,29 @@ def main():
     # log_action = []
     # log_obs = []
 
+    horizon = 10
+
     while not done:
-        traj = get_ref_traj_in_horizon(obs, waypoints, predict_time=2)
-        # TODO: visualize traj in gui
-        # TODO: downsample traj to a fixed num - horizon
-        # TODO: lidar scan & h-traj -> NN -> lateral offsets
+        front_traj = get_front_traj(obs, waypoints, predict_time=2)  # [i, x, y, v]
+        print(front_traj.shape)
+
+        # TODO: visualize traj in gui - Biao
+
+        # TODO: interpolate traj to a fixed num - horizon - Derek
+        horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
+        print(horizon_traj.shape)
+
+        # TODO: lidar scan & h-traj -> PPO -> lateral offsets !!!!
+        offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
+
         # TODO: interpolate the offsets for every waypoint in traj -> get offsetted traj in frenet frame
         # TODO: transform it into world frame
+        # offset_horizon_traj =   # len = 10
+
         # TODO: extract lookahead point
-        # TODO: modify PP, input lookahead point, output steering & speed
+        # interpolate the lookahead point + corresponding speed into the offset_horizon_traj curve
+
+        # TODO: modify PP, input lookahead point, output steering & speed - Derek
 
         steering, speed = controller.control(obs)  # each agent’s current observation
         print("steering = {}, speed = {}".format(round(steering, 5), speed))
