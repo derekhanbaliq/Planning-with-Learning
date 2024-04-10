@@ -1,6 +1,6 @@
 """
     main application for RL planner
-    Author: Derek Zhou
+    Author: Derek Zhou, Biao Wang, Tian Tan
     References: https://f1tenth-gym.readthedocs.io/en/v1.0.0/api/obv.html
                 https://github.com/f1tenth/f1tenth_gym/tree/main/examples
 """
@@ -12,7 +12,7 @@ import os
 
 import utils.log as log
 from utils.waypoint_loader import WaypointLoader
-from controllers.pure_pursuit import PurePursuit
+from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from controllers.lqr_steering import LQRSteeringController
 from controllers.lqr_steering_speed import LQRSteeringSpeedController
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon
@@ -45,6 +45,7 @@ def main():
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
     env.add_render_callback(renderer.render_traj)  # render the reference trajectory
+    env.add_render_callback(renderer.render_lookahead_point)
     env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
@@ -57,22 +58,27 @@ def main():
 
     while not done:
         front_traj = get_front_traj(obs, waypoints, predict_time=2)  # [i, x, y, v]
-        print(front_traj.shape)
-
-        horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
-        print(horizon_traj.shape)
-
+        # print(front_traj.shape)
         renderer.traj = front_traj  # update the reference trajectory for rendering
 
-        # TODO: lidar scan & h-traj -> PPO -> lateral offsets !!!!
+        horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
+        # print(horizon_traj.shape)
+        # TODO: visualize horizon traj - Biao
+
+        # TODO: lidar scan & h-traj -> PPO -> lateral offsets
         offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
 
-        # TODO: interpolate the offsets for every waypoint in traj -> get offsetted traj in frenet frame
+        # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame
         # TODO: transform it into world frame
         # offset_horizon_traj =   # len = 10
 
         # TODO: extract lookahead point
         # interpolate the lookahead point + corresponding speed into the offset_horizon_traj curve
+        if method == 'pure_pursuit':
+            lookahead_point = get_lookahead_point(horizon_traj[:, :2])  # [x, y]
+            print(lookahead_point)
+            renderer.point = lookahead_point
+            # TODO: visualize lookahead point - Biao
 
         # TODO: modify PP, input lookahead point, output steering & speed - Derek
 

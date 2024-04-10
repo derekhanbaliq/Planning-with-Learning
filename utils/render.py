@@ -7,7 +7,6 @@ class Renderer:
     def __init__(self, waypoints):
         self.waypoints = waypoints
         self.drawn_waypoints = []
-        self.obs = None
 
         self.traj = None
         self.last_traj = []
@@ -28,29 +27,10 @@ class Renderer:
             else:
                 self.drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
 
-    def load_obs(self, obs):
-        self.obs = obs
-
-    def render_path(self, e):
-        """
-        update waypoints being drawn by EnvRenderer
-        """
-        x = self.obs['poses_x']
-        y = self.obs['poses_y']
-
-        point = np.array([x, y])
-
-        scaled_point = 50. * point
-
-        b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_point[0], scaled_point[1], 0.]),
-                        ('c3B/stream', [255, 0, 0]))
-        self.drawn_waypoints.append(b)
-
     def render_traj(self, e):
         """
         update reference trajectory
         """
-        pass
 
         if self.traj.shape[1] == 4:
             x = self.traj[:, 1]
@@ -72,6 +52,13 @@ class Renderer:
                             ('c3B/stream', [255, 0, 0]))
             self.last_traj.append(b)
 
+    def render_lookahead_point(self, e):
+        """
+        update lookahead point
+        """
+
+        pass
+
 
 def fix_gui(e):
     # update camera to follow car
@@ -80,7 +67,7 @@ def fix_gui(e):
     top, bottom, left, right = max(y), min(y), min(x), max(x)
     e.score_label.x = left
     e.score_label.y = top - 700
-    e.left = left - 800
-    e.right = right + 800
+    e.left = left - 1000
+    e.right = right + 1000
     e.top = top + 800
     e.bottom = bottom - 800

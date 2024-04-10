@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
+from scipy.interpolate import interp1d
 
 
 class PurePursuit:
@@ -82,3 +83,19 @@ class PurePursuit:
         point = self.waypoints[point_index]
 
         return point, point_index
+
+
+def get_lookahead_point(offset_traj):
+    num_points = offset_traj.shape[0]
+    steps = np.linspace(start=1, stop=num_points, num=num_points, endpoint=False)
+
+    point = np.zeros(2)  #
+    for i in range(2):  # offset_traj.shape[1] = 2, [x, y]
+        val = offset_traj[:, i]
+        interp_func = interp1d(steps, val.flatten(), kind='cubic')
+        new_steps = np.linspace(start=1, stop=num_points, num=4, endpoint=False)  # 0.5s predict time to chase
+        new_val = interp_func(new_steps)
+        point[i] = new_val[0]  # the first point
+
+    return point
+

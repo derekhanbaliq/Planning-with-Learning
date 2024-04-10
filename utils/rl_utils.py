@@ -1,3 +1,8 @@
+"""
+    main application for RL planner
+    Author: Derek Zhou, Biao Wang, Tian Tan
+"""
+
 import numpy as np
 from scipy.spatial import distance
 from scipy.interpolate import interp1d
@@ -44,14 +49,14 @@ def get_front_traj(obs, profile, predict_time=2):
 
 
 def get_interpolated_traj_with_horizon(traj, h):
-    len = traj.shape[0]
-    steps = np.linspace(start=1, stop=len, num=len, endpoint=False)
+    num_points = traj.shape[0]
+    steps = np.linspace(start=1, stop=num_points, num=num_points, endpoint=False)
 
     h_traj = []
     for i in range(1, traj.shape[1]):  # x, y, v
         val = traj[:, i]
         interp_func = interp1d(steps, val.flatten(), kind='cubic')
-        new_steps = np.linspace(start=1, stop=len, num=h, endpoint=False)
+        new_steps = np.linspace(start=1, stop=num_points, num=h, endpoint=False)
         new_val = interp_func(new_steps)
         h_traj.append(new_val)
     h_traj = np.array(h_traj).T
