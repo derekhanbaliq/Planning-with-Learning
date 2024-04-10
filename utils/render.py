@@ -8,6 +8,9 @@ class Renderer:
         self.waypoints = waypoints
         self.drawn_waypoints = []
         self.obs = None
+        
+        self.traj = None
+        self.last_traj = []
 
     def render_waypoints(self, e):
         """
@@ -42,3 +45,30 @@ class Renderer:
         b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_point[0], scaled_point[1], 0.]),
                         ('c3B/stream', [255, 0, 0]))
         self.drawn_waypoints.append(b)
+        
+    def render_traj(self, e):
+        """
+        update reference trajectory
+        """
+        pass
+    
+        if self.traj.shape[1] == 4:
+            x = self.traj[:,1]
+            y = self.traj[:,2]
+        else:
+            x = self.traj[:,0]
+            y = self.traj[:,1]
+            
+        point = np.vstack((x, y)).T
+
+        scaled_point = 50. * point
+        
+        for last_point in self.last_traj:
+            last_point.delete()
+        self.last_traj.clear()
+        
+        for i in range(scaled_point.shape[0]):
+            b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_point[i, 0], scaled_point[i, 1], 0.]),
+                            ('c3B/stream', [255, 0, 0]))
+            self.last_traj.append(b)
+        
