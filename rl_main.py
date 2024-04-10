@@ -16,7 +16,7 @@ from controllers.pure_pursuit import PurePursuit
 from controllers.lqr_steering import LQRSteeringController
 from controllers.lqr_steering_speed import LQRSteeringSpeedController
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon
-from utils.render import Renderer
+from utils.render import Renderer, fix_gui
 
 
 def main():
@@ -45,6 +45,7 @@ def main():
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
     env.add_render_callback(renderer.render_traj)  # render the reference trajectory
+    env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
     obs, _, done, _ = env.reset(init_pos)
@@ -61,7 +62,7 @@ def main():
         horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
         print(horizon_traj.shape)
 
-        renderer.traj = horizon_traj  # update the reference trajectory for rendering
+        renderer.traj = front_traj  # update the reference trajectory for rendering
 
         # TODO: lidar scan & h-traj -> PPO -> lateral offsets !!!!
         offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]

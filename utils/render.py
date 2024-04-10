@@ -71,3 +71,16 @@ class Renderer:
             b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_point[i, 0], scaled_point[i, 1], 0.]),
                             ('c3B/stream', [255, 0, 0]))
             self.last_traj.append(b)
+
+
+def fix_gui(e):
+    # update camera to follow car
+    x = e.cars[0].vertices[::2]
+    y = e.cars[0].vertices[1::2]
+    top, bottom, left, right = max(y), min(y), min(x), max(x)
+    e.score_label.x = left
+    e.score_label.y = top - 700
+    e.left = left - 800
+    e.right = right + 800
+    e.top = top + 800
+    e.bottom = bottom - 800
