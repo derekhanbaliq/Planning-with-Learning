@@ -1,4 +1,4 @@
-.idea
-__pycache__
+.idea/*.xml
+__pycache__/*.pyc
 examples
 gym/f110_gym.egg-info
