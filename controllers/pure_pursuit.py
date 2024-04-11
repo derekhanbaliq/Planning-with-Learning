@@ -87,15 +87,15 @@ class PurePursuit:
 
 def get_lookahead_point(offset_traj):
     num_points = offset_traj.shape[0]
-    steps = np.linspace(start=1, stop=num_points, num=num_points, endpoint=False)
+    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=False)  # 0 ~ 9
 
-    point = np.zeros(2)  #
-    for i in range(2):  # offset_traj.shape[1] = 2, [x, y]
+    profile = np.zeros(3)
+    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
         val = offset_traj[:, i]
         interp_func = interp1d(steps, val.flatten(), kind='cubic')
-        new_steps = np.linspace(start=1, stop=num_points, num=4, endpoint=False)  # 0.5s predict time to chase
+        new_steps = np.linspace(start=0, stop=num_points, num=4, endpoint=False)  # 0.5s predict time to chase
         new_val = interp_func(new_steps)
-        point[i] = new_val[0]  # the first point
+        profile[i] = new_val[1]  # the second point
 
-    return point
+    return profile
 

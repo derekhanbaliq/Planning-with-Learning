@@ -1,6 +1,7 @@
 .idea
 __pycache__
-controllers/__pycache__
 examples
 gym/f110_gym.egg-info
-utils/__pycache__
+*.pyc
+*.nbc
+*.nbi
