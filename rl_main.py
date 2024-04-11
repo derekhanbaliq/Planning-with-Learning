@@ -44,7 +44,8 @@ def main():
     env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map', map_ext='.png', num_agents=1)  # .pgm
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_traj)  # render the reference trajectory
+    env.add_render_callback(renderer.render_front_traj)
+    env.add_render_callback(renderer.render_horizon_traj)
     env.add_render_callback(renderer.render_lookahead_point)
     env.add_render_callback(fix_gui)
     lap_time = 0.0
@@ -58,12 +59,11 @@ def main():
 
     while not done:
         front_traj = get_front_traj(obs, waypoints, predict_time=2)  # [i, x, y, v]
+        renderer.front_traj = front_traj
         # print(front_traj.shape)
-        renderer.traj = front_traj  # update the reference trajectory for rendering
 
         horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
-        # print(horizon_traj.shape)
-        # TODO: visualize horizon traj - Biao
+        renderer.horizon_traj = horizon_traj
 
         # TODO: lidar scan & h-traj -> PPO -> lateral offsets
         offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
@@ -75,14 +75,13 @@ def main():
         # TODO: extract lookahead point
         # interpolate the lookahead point + corresponding speed into the offset_horizon_traj curve
         if method == 'pure_pursuit':
-            lookahead_point = get_lookahead_point(horizon_traj[:, :2])  # [x, y]
-            print(lookahead_point)
-            renderer.point = lookahead_point
-            # TODO: visualize lookahead point - Biao
+            lookahead_point_profile = get_lookahead_point(horizon_traj)  # [x, y, v]
+            renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
+            # print(lookahead_point_profile)
 
         # TODO: modify PP, input lookahead point, output steering & speed - Derek
 
-        steering, speed = controller.control(obs)  # each agent’s current observation
+        steering, speed = controller.control(obs)
         print("steering = {}, speed = {}".format(round(steering, 5), speed))
         # log_action.append([lap_time, steering, speed])
 
