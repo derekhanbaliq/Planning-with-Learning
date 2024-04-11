@@ -1,6 +1,6 @@
 import numpy as np
-from pyglet.gl import GL_POINTS  # game interface
-
+from pyglet.gl import *  # game interface
+# from pyglet.gl import GL_POINTS, GL_QUADS, GL_TRIANGLES  # game interface
 
 class Renderer:
 
@@ -8,8 +8,15 @@ class Renderer:
         self.waypoints = waypoints
         self.drawn_waypoints = []
 
-        self.traj = None
-        self.last_traj = []
+        self.front_traj = None
+        self.last_front_traj = []
+        
+        self.horizon_traj = None
+        self.last_horizon_traj = []
+        
+        self.ahead_point = None
+        self.last_ahead_point = None
+        
 
     def render_waypoints(self, e):
         """
@@ -27,38 +34,69 @@ class Renderer:
             else:
                 self.drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
 
-    def render_traj(self, e):
+    def render_front_traj(self, e):
         """
-        update reference trajectory
+        update reference front trajectory
         """
 
-        if self.traj.shape[1] == 4:
-            x = self.traj[:, 1]
-            y = self.traj[:, 2]
+        if self.front_traj.shape[1] == 4:
+            point = self.front_traj[:, 1:3]
         else:
-            x = self.traj[:, 0]
-            y = self.traj[:, 1]
-
-        point = np.vstack((x, y)).T
-
+            point = self.front_traj[:, :2]
+        
+        # point = np.vstack((x, y)).T
         scaled_point = 50. * point
 
-        for last_point in self.last_traj:
+        for last_point in self.last_front_traj:
             last_point.delete()
-        self.last_traj.clear()
+        self.last_front_traj.clear()
 
         for i in range(scaled_point.shape[0]):
             b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_point[i, 0], scaled_point[i, 1], 0.]),
                             ('c3B/stream', [255, 0, 0]))
-            self.last_traj.append(b)
+            self.last_front_traj.append(b)
+            
+    def render_horizon_traj(self, e):
+        """
+        update horizon point
+        """
+        def create_triangle(x, y, size):            
+            return ('v2f/stream', [x+size, y,
+                            x-size/2, y-size,
+                            x-size/2, y+size])
+                
+        point = self.horizon_traj[:, :2]
+        scaled_point = 50. * point
+
+        for last_point in self.last_horizon_traj:
+            last_point.delete()
+        self.last_horizon_traj.clear()
+
+        for i in range(scaled_point.shape[0]):
+            b = e.batch.add(3, GL_TRIANGLES, None, create_triangle(scaled_point[i,0], scaled_point[i,1], 4),
+                            ('c3B/stream', [255, 255, 0, 255, 255, 0, 255, 255, 0]))
+            self.last_horizon_traj.append(b)
+        
 
     def render_lookahead_point(self, e):
         """
         update lookahead point
         """
 
-        pass
+        def create_triangle(x, y, size):
+            return ('v2f/stream', [x, y+size,
+                            x-size, y-size/2,
+                            x+size, y-size/2])
 
+        scaled_point = 50. * self.ahead_point
+        
+        if self.last_ahead_point != None:
+            self.last_ahead_point.delete()
+
+        b = e.batch.add(3, GL_TRIANGLES, None, create_triangle(scaled_point[0], scaled_point[1], 10),
+                            ('c3B/stream', [0, 255, 0, 0, 255, 0, 0, 255, 0])) 
+        self.last_ahead_point = b
+            
 
 def fix_gui(e):
     # update camera to follow car

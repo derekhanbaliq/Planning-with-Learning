@@ -44,8 +44,9 @@ def main():
     env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map', map_ext='.png', num_agents=1)  # .pgm
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_traj)  # render the reference trajectory
-    env.add_render_callback(renderer.render_lookahead_point)
+    env.add_render_callback(renderer.render_front_traj)  # render the reference trajectory
+    env.add_render_callback(renderer.render_horizon_traj)  # render the horizon trajectory
+    env.add_render_callback(renderer.render_lookahead_point) # render the lookahead point
     env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
@@ -59,11 +60,11 @@ def main():
     while not done:
         front_traj = get_front_traj(obs, waypoints, predict_time=2)  # [i, x, y, v]
         # print(front_traj.shape)
-        renderer.traj = front_traj  # update the reference trajectory for rendering
+        renderer.front_traj = front_traj  # update the reference trajectory for rendering
 
         horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
         # print(horizon_traj.shape)
-        # TODO: visualize horizon traj - Biao
+        renderer.horizon_traj = horizon_traj  # update the reference trajectory for rendering
 
         # TODO: lidar scan & h-traj -> PPO -> lateral offsets
         offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
@@ -77,8 +78,7 @@ def main():
         if method == 'pure_pursuit':
             lookahead_point = get_lookahead_point(horizon_traj[:, :2])  # [x, y]
             print(lookahead_point)
-            renderer.point = lookahead_point
-            # TODO: visualize lookahead point - Biao
+            renderer.ahead_point = lookahead_point # update the lookahead point for rendering
 
         # TODO: modify PP, input lookahead point, output steering & speed - Derek
 
