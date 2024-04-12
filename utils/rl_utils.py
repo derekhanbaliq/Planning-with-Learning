@@ -51,16 +51,32 @@ def get_front_traj(obs, profile, predict_time=2):
 def get_interpolated_traj_with_horizon(traj, h):
     num_points = traj.shape[0]
     # linspace - https://numpy.org/doc/stable/reference/generated/numpy.linspace.html
-    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=False)
+    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)
 
     h_traj = []
     for i in range(1, traj.shape[1]):  # x, y, v
         val = traj[:, i]
         interp_func = interp1d(steps, val.flatten(), kind='cubic')
-        new_steps = np.linspace(start=0, stop=num_points, num=h, endpoint=False)
+        new_steps = np.linspace(start=0, stop=num_points, num=h, endpoint=True)
         new_val = interp_func(new_steps)
         h_traj.append(new_val)
     h_traj = np.array(h_traj).T
 
     return h_traj
+
+
+def densify_offset_traj(offset_traj, intep_num=80):
+    num_points = offset_traj.shape[0]  # horizon
+    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)  # index, 0 ~ 10
+
+    profile = np.zeros((intep_num, 3))
+    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
+        val = offset_traj[:, i]
+        interp_func = interp1d(steps, val.flatten(), kind='cubic')
+        new_steps = np.linspace(start=0, stop=num_points,
+                                num=intep_num, endpoint=False)  # even at 8m/s, the unit step is 0.2m
+        profile[:, i] = np.array(interp_func(new_steps))
+    # print(profile.shape)
+
+    return profile
 

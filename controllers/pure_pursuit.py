@@ -18,22 +18,6 @@ class PurePursuit:
         self.L = 1.5
         self.steering_gain = 0.5
 
-    def get_target_waypoint(self, obs, agent=1):
-        # Get current pose
-        self.currX = obs['poses_x'][agent - 1]
-        self.currY = obs['poses_y'][agent - 1]
-        self.currPos = np.array([self.currX, self.currY]).reshape((1, 2))
-
-        # Find closest waypoint to where we are
-        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints,))
-        self.closest_index = np.argmin(self.distances)
-
-        # Find target point
-        targetPoint, target_point_index = self.get_closest_point_beyond_lookahead_dist(self.L)
-        # print(f"agent num: {agent} at {targetPoint}")
-        # self.targetPoint = targetPoint
-        return targetPoint, target_point_index
-
     def control(self, obs, agent=1, offset=None):
         # Get current pose
         self.currX = obs['poses_x'][agent - 1]
@@ -53,8 +37,8 @@ class PurePursuit:
         # calculate steering angle / curvature
         waypoint_y = np.dot(np.array([np.sin(-obs['poses_theta'][agent - 1]), np.cos(-obs['poses_theta'][agent - 1])]),
                             targetPoint - np.array([self.currX, self.currY]))
-        gamma = self.steering_gain * 2.0 * waypoint_y / self.L ** 2
-        steering_angle = gamma
+        gamma = 2.0 * waypoint_y / self.L ** 2
+        steering_angle = self.steering_gain * gamma
         # radius = 1 / (2.0 * waypoint_y / self.L ** 2)
         # steering_angle = np.arctan(0.33 / radius)  # Billy's method, but it also involves tricky fixing
         steering_angle = np.clip(steering_angle, -0.35, 0.35)
@@ -63,6 +47,20 @@ class PurePursuit:
         speed = self.ref_speed[target_point_index]
 
         return steering_angle, speed
+
+    def rl_control(self, obs, profile, max_speed=5.0, agent=1):
+        target_point = np.array([profile[0], profile[1]])
+        y = np.dot(np.array([np.sin(-obs['poses_theta'][agent - 1]), np.cos(-obs['poses_theta'][agent - 1])]),
+                   target_point - np.array([obs['poses_x'][agent - 1], obs['poses_y'][agent - 1]]))
+        gamma = 2.0 * y / self.L ** 2
+
+        steering = self.steering_gain * gamma
+        steering = np.clip(steering, -0.35, 0.35)
+
+        speed = profile[2]
+        speed = np.clip(speed, 0.0, max_speed)
+
+        return steering, speed
 
     def get_closest_point_beyond_lookahead_dist(self, threshold):
         point_index = self.closest_index
@@ -84,18 +82,30 @@ class PurePursuit:
 
         return point, point_index
 
+    def get_target_waypoint(self, obs, agent=1):
+        # Get current pose
+        self.currX = obs['poses_x'][agent - 1]
+        self.currY = obs['poses_y'][agent - 1]
+        self.currPos = np.array([self.currX, self.currY]).reshape((1, 2))
 
-def get_lookahead_point(offset_traj):
-    num_points = offset_traj.shape[0]
-    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=False)  # 0 ~ 9
+        # Find closest waypoint to where we are
+        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints,))
+        self.closest_index = np.argmin(self.distances)
 
-    profile = np.zeros(3)
-    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
-        val = offset_traj[:, i]
-        interp_func = interp1d(steps, val.flatten(), kind='cubic')
-        new_steps = np.linspace(start=0, stop=num_points, num=4, endpoint=False)  # 0.5s predict time to chase
-        new_val = interp_func(new_steps)
-        profile[i] = new_val[1]  # the second point
+        # Find target point
+        targetPoint, target_point_index = self.get_closest_point_beyond_lookahead_dist(self.L)
+        # print(f"agent num: {agent} at {targetPoint}")
+        # self.targetPoint = targetPoint
+        return targetPoint, target_point_index
 
-    return profile
+
+def get_lookahead_point(dense_traj, lookahead_dist):
+    acc_dist = 0
+    for i in range(dense_traj.shape[0] - 1):
+        acc_dist += np.linalg.norm(dense_traj[i + 1, :2] - dense_traj[i, :2])
+        # print(acc_dist)
+        if acc_dist >= lookahead_dist:
+            return dense_traj[i]
+    return dense_traj[dense_traj.shape[0] - 1]
+
 
