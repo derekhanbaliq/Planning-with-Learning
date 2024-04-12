@@ -47,24 +47,16 @@ def main():
     init_pos = np.array([yaml_config['init_pos']])
     obs, _, done, _ = env.reset(init_pos)
 
-    # log_action = []
-    # log_obs = []
-
     while not done:
         steering, speed = controller.control(obs)  # each agent’s current observation
         print("steering = {}, speed = {}".format(round(steering, 5), speed))
-        # log_action.append([lap_time, steering, speed])
 
         obs, time_step, done, _ = env.step(np.array([[steering, speed]]))
-        # log_obs.append([lap_time, obs['poses_x'][0], obs['poses_y'][0],
-        #                 obs['poses_theta'][0], obs['linear_vels_x'][0]])
 
         lap_time += time_step
         env.render(mode='human')
 
     print('Sim elapsed time:', lap_time)
-    # log.xlsx_log_action(method_name, map_name, log_action)
-    # log.xlsx_log_observation(method_name, map_name, log_obs)
 
 
 if __name__ == '__main__':

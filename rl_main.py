@@ -10,7 +10,6 @@ import numpy as np
 import yaml
 import os
 
-import utils.log as log
 from utils.waypoint_loader import WaypointLoader
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from controllers.lqr_steering import LQRSteeringController
@@ -21,7 +20,7 @@ from utils.render import Renderer, fix_gui
 
 def main():
     method = 'pure_pursuit'  # pure_pursuit, lqr_steering, lqr_steering_speed
-    rl_planner = True
+    enable_rl_planner = True
 
     # load map & yaml
     map_name = 'levine_2nd'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
@@ -46,22 +45,19 @@ def main():
                    map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_front_traj) if rl_planner else None
-    env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
-    env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
+    env.add_render_callback(renderer.render_front_traj) if enable_rl_planner else None
+    env.add_render_callback(renderer.render_horizon_traj) if enable_rl_planner else None
+    env.add_render_callback(renderer.render_lookahead_point) if enable_rl_planner else None
     env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
     obs, _, done, _ = env.reset(init_pos)
 
-    # log_action = []
-    # log_obs = []
-
     horizon = int(10)
     rl_max_speed = 5.0
 
     while not done:
-        if method == 'pure_pursuit' and rl_planner:
+        if method == 'pure_pursuit' and enable_rl_planner:
             # extract waypoints in coming seconds as front traj
             front_traj = get_front_traj(obs, waypoints, predict_time=1.0)  # [i, x, y, v]
             renderer.front_traj = front_traj
@@ -84,18 +80,15 @@ def main():
             renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
             # print(lookahead_point_profile)
 
-            # TODO: modify PP, input lookahead point, output steering & speed - Derek
+            # input lookahead point pos & speed, output steering & speed
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_max_speed)
 
         else:
             steering, speed = controller.control(obs)
 
         print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
-        # log_action.append([lap_time, steering, speed])
 
         obs, time_step, done, _ = env.step(np.array([[steering, speed]]))
-        # log_obs.append([lap_time, obs['poses_x'][0], obs['poses_y'][0],
-        #                 obs['poses_theta'][0], obs['linear_vels_x'][0]])
 
         lap_time += time_step
         env.render(mode='human')
