@@ -24,7 +24,7 @@ def main():
     rl_planner = True
 
     # load map & yaml
-    map_name = 'levine_2nd'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     yaml_config = yaml.load(open(map_path + '/' + map_name + '_map.yaml'), Loader=yaml.FullLoader)
 
