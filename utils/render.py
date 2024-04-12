@@ -1,6 +1,6 @@
 import numpy as np
-from pyglet.gl import *  # game interface
-# from pyglet.gl import GL_POINTS, GL_QUADS, GL_TRIANGLES  # game interface
+# from pyglet.gl import *  # game interface
+from pyglet.gl import GL_POINTS, GL_QUADS, GL_TRIANGLES  # game interface
 
 
 class Renderer:
