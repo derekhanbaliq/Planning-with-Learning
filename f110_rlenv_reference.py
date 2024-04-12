@@ -3,16 +3,12 @@
 # For reference
 import gym
 from gym import spaces
-
 import os
 import yaml
 import numpy as np
-from scipy.spatial import distance
-
 from f110_gym.envs.f110_env import F110Env
 from controllers.pure_pursuit import PurePursuit, Waypoint
 from utils.render import Renderer
-from utils import *
 
 NUM_LIDAR_SCANS = 720 // 10
 SCAN_MAX = 10
@@ -33,8 +29,6 @@ class F110Env_Continuous_Planner(gym.Env):
         self.yaml_config = yaml.load(open(map_path + '/' + map_name + '_map.yaml'), Loader=yaml.FullLoader)
 
         # load waypoints
-        # csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)
-        # csv_data = np.loadtxt(map_path + '/' + map_name + '_centerline.csv', delimiter=',', skiprows=0)
         csv_data = np.loadtxt(map_path + '/' + map_name + '_centerline.csv', delimiter=';', skiprows=0)
 
         self.main_waypoints = Waypoint(csv_data)  # process these with RL
@@ -81,9 +75,6 @@ class F110Env_Continuous_Planner(gym.Env):
         obs = self._get_obs(raw_obs)
         self.prev_obs = obs
         return obs
-
-    def process_action(self, action):
-        pass
 
     def step(self, action):
         """
@@ -138,10 +129,6 @@ class F110Env_Continuous_Planner(gym.Env):
         #     reward += 1
         # reward += self.lap_time/1000
 
-        # TODO
-
-        # TODO: is there anything that prevents the output of the model from given an x-offset in line? and in an approriate length?
-
         return obs, reward, done, info
 
     def _get_reward(self, action, obs, time):
@@ -181,25 +168,6 @@ class F110Env_Continuous_Planner(gym.Env):
         sim2real_noise = np.random.normal(0, 0.1, size=scans.shape)  # np.random.uniform(-0.25, 0.25, scans.shape)
         scans = scans + sim2real_noise
         scans = np.clip(scans, 0, SCAN_MAX)
-        # print(scans.shape)
-        # negative_distance, positive_distance = 0, 0
-        # angle_increment = 360/NUM_LIDAR_SCANS
-        # angles = np.deg2rad(np.arange(0, 360, angle_increment))
-        # sin_angles, cos_angles = np.sin(angles), np.cos(angles)
-        # negative_distance = scans[540]
-        # positive_distance = scans[0]
-        # print("distance: ", negative_distance, positive_distance)
-        # print("sum: ", negative_distance + positive_distance)
-        # self.currPos = np.array([raw_obs['poses_x'][0], raw_obs['poses_y'][0], raw_obs['poses_theta'][0]])
-        # xmax, xmin = self.main_waypoints.max(axis=0), self.main_waypoints.min(axis=0)
-        # ymax, ymin = self.main_waypoints.max(axis=1), self.main_waypoints.min(axis=1)
-        # thetamax, thetamin = 2*np.pi, 0
-
-        # obs[:3] = self.currPos.reshape(-1, 1)
-        # obs[3:NUM_LIDAR_SCANS+3, :] = scans
-        # targetPoint, idx  = self.main_controller.get_target_waypoint(self.prev_raw_obs, agent=1)
-        # print("target point:", targetPoint)
-        # obs[-2:, :] = targetPoint.reshape(-1, 1)
         return scans
 
     def render(self, mode, **kwargs):

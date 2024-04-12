@@ -5,24 +5,20 @@
                 https://github.com/f1tenth/f1tenth_gym/tree/main/examples
 """
 
-import gym
-import numpy as np
-import yaml
 import os
 
-from utils.waypoint_loader import WaypointLoader
-from controllers.pure_pursuit import PurePursuit, get_lookahead_point
-from controllers.lqr_steering import LQRSteeringController
-from controllers.lqr_steering_speed import LQRSteeringSpeedController
-from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
-from utils.render import Renderer, fix_gui
+import numpy as np
+import yaml
 
-from f110_gym.envs.f110_env import F110Env
+from controllers.pure_pursuit import PurePursuit, get_lookahead_point
+from f110_env_rl import F110RLEnv
+from utils.render import Renderer, fix_gui
+from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
+from utils.waypoint_loader import WaypointLoader
 
 
 def main():
-    method = 'pure_pursuit'  # pure_pursuit, lqr_steering, lqr_steering_speed
-    enable_rl_planner = True
+    # pure_pursuit + enable_rl_planner
 
     # load map & yaml
     map_name = 'levine_2nd'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
@@ -34,27 +30,16 @@ def main():
     waypoints = WaypointLoader(map_name, csv_data)
 
     # load controller
-    controller = None
-    if method == 'pure_pursuit':
-        controller = PurePursuit(waypoints)
-    elif method == 'lqr_steering':
-        controller = LQRSteeringController(waypoints)
-    elif method == 'lqr_steering_speed':
-        controller = LQRSteeringSpeedController(waypoints)
+    controller = PurePursuit(waypoints)
 
-    # create & init env
-    # env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map',
-    #                map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
-    
-    env = F110Env(map=map_path + '/' + map_name + '_map',
-                   map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
-    
-    
+    env = F110RLEnv(seed=0, map=map_path + '/' + map_name + '_map',
+                    map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
+
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_front_traj) if enable_rl_planner else None
-    env.add_render_callback(renderer.render_horizon_traj) if enable_rl_planner else None
-    env.add_render_callback(renderer.render_lookahead_point) if enable_rl_planner else None
+    env.add_render_callback(renderer.render_front_traj)
+    env.add_render_callback(renderer.render_horizon_traj)
+    env.add_render_callback(renderer.render_lookahead_point)
     env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
@@ -64,35 +49,30 @@ def main():
     rl_max_speed = 5.0
 
     while not done:
-        if method == 'pure_pursuit' and enable_rl_planner:
-            # extract waypoints in coming seconds as front traj
-            front_traj = get_front_traj(obs, waypoints, predict_time=1.0)  # [i, x, y, v]
-            renderer.front_traj = front_traj
-            # print(front_traj.shape)
+        # extract waypoints in coming seconds as front traj
+        front_traj = get_front_traj(obs, waypoints, predict_time=1.0)  # [i, x, y, v]
+        renderer.front_traj = front_traj
+        # print(front_traj.shape)
 
-            # interpolate the front traj to get a 10-point-traj
-            horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
-            renderer.horizon_traj = horizon_traj
+        # interpolate the front traj to get a 10-point-traj
+        horizon_traj = get_interpolated_traj_with_horizon(front_traj, horizon)  # [x, y, v]
+        renderer.horizon_traj = horizon_traj
 
-            # TODO: lidar scan & h-traj -> PPO -> lateral offsets
-            offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
+        # TODO: lidar scan & h-traj -> PPO -> lateral offsets
+        # offset = PPO_model(obs['scan'], horizon_traj)
+        offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
 
-            # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame
-            # TODO: transform it into world frame
-            # offset_horizon_traj =   # len = 10
+        # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame
+        # TODO: transform it into world frame
+        # offset_horizon_traj =   # len = 10
 
-            # interpolate offset traj to get the lookahead point profile (x, y) and v
-            dense_offset_traj = densify_offset_traj(horizon_traj)  # [x, y, v]
-            lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
-            renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
-            # print(lookahead_point_profile)
+        # interpolate offset traj to get the lookahead point profile (x, y) and v
+        dense_offset_traj = densify_offset_traj(horizon_traj)  # [x, y, v]
+        lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
+        renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
 
-            # input lookahead point pos & speed, output steering & speed
-            steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_max_speed)
-
-        else:
-            steering, speed = controller.control(obs)
-
+        # input lookahead point pos & ref speed, output steering & speed
+        steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_max_speed)
         print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
 
         obs, time_step, done, _ = env.step(np.array([[steering, speed]]))
@@ -101,8 +81,6 @@ def main():
         env.render(mode='human')
 
     print('Sim elapsed time:', lap_time)
-    # log.xlsx_log_action(method_name, map_name, log_action)
-    # log.xlsx_log_observation(method_name, map_name, log_obs)
 
 
 if __name__ == '__main__':
