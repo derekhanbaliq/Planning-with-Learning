@@ -17,6 +17,8 @@ from controllers.lqr_steering_speed import LQRSteeringSpeedController
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
 from utils.render import Renderer, fix_gui
 
+from f110_gym.envs.f110_env import F110Env
+
 
 def main():
     method = 'pure_pursuit'  # pure_pursuit, lqr_steering, lqr_steering_speed
@@ -41,8 +43,13 @@ def main():
         controller = LQRSteeringSpeedController(waypoints)
 
     # create & init env
-    env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map',
+    # env = gym.make('f110_gym:f110-v0', map=map_path + '/' + map_name + '_map',
+    #                map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
+    
+    env = F110Env(map=map_path + '/' + map_name + '_map',
                    map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
+    
+    
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
     env.add_render_callback(renderer.render_front_traj) if enable_rl_planner else None
