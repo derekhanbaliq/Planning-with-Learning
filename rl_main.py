@@ -49,7 +49,7 @@ def main():
     env.add_render_callback(renderer.render_front_traj) if rl_planner else None
     env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
-    env.add_render_callback(fix_gui)
+    # env.add_render_callback(fix_gui)
     lap_time = 0.0
     init_pos = np.array([yaml_config['init_pos']])
     obs, _, done, _ = env.reset(init_pos)
