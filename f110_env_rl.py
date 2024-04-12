@@ -94,15 +94,11 @@ class F110RLEnv(F110Env):
         print("action space shape", self.single_action_space.shape)
 
     def env_step(self, offset=None):
-        # TODO: lidar scan & h-traj -> PPO -> lateral offsets
-        # offset = PPO_model(obs['scan'], horizon_traj)
         # offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
 
-        # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame
-        # TODO: transform it into world frame
+        # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame - Tian
+        # TODO: transform it into world frame - Tian
         # offset_horizon_traj =   # len = 10
-        # TODO: transform the action (from offset to real input)
-
         
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
@@ -126,10 +122,10 @@ class F110RLEnv(F110Env):
         # interpolate the front traj to get a 10-point-traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.renderer.horizon_traj = self.horizon_traj
-        # TODO: need to simulate for n horizon/time steps
-
+    
         # TODO: design the reward function
 
+        # TODO: modify the next observation output (lidar, front traj, pose)
         # only have horizon traj
         observation = self.horizon_traj.flatten() # + lidar & pose
 
