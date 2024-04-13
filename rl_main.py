@@ -6,17 +6,16 @@
 """
 
 import os
-
 import numpy as np
 import yaml
 
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
-# from f110_env_rl import F110RLEnv
 from utils.render import Renderer, fix_gui
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
 from utils.waypoint_loader import WaypointLoader
 
 from f110_env_rl import F110RLEnv
+
 
 def main():
     # pure_pursuit + enable_rl_planner
@@ -44,16 +43,17 @@ def main():
     # env.add_render_callback(renderer.render_horizon_traj)
     # env.add_render_callback(renderer.render_lookahead_point)
     # env.add_render_callback(fix_gui)
-    lap_time = 0.0
+    # lap_time = 0.0
     # init_pos = np.array([yaml_config['init_pos']])
     # obs, _, done, _ = env.reset(init_pos)
 
     # obs = env.obs
-    horizon = int(10)
-    rl_max_speed = 5.0
+    # horizon = int(10)
+    # rl_max_speed = 5.0
+
+    # done = False
 
     while not env.done:
-        
         env.env_step()
         # # extract waypoints in coming seconds as front traj
         # front_traj = get_front_traj(env.obs, env.waypoints, predict_time=1.0)  # [i, x, y, v]

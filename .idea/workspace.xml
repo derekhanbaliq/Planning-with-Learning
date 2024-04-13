@@ -7,8 +7,6 @@
     <list default="true" id="d727f57b-69a3-4230-8e70-00fa64089e34" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/f110_env_rl.py" beforeDir="false" afterPath="$PROJECT_DIR$/f110_env_rl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/f110_rlenv_reference.py" beforeDir="false" afterPath="$PROJECT_DIR$/f110_rlenv_reference.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gym/f110_gym/envs/f110_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/gym/f110_gym/envs/f110_env.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rl_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/rl_main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -40,15 +38,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "D:/Courses/ESE 615/RL-planner/pure_pursuit/f110_rlenv.py",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "two.files.diff.last.used.file": "D:/Courses/ESE 615/RL-planner/pure_pursuit/f110_rlenv.py"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Courses/ESE 615/RL-planner/pure_pursuit/f110_rlenv.py&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;D:/Courses/ESE 615/RL-planner/pure_pursuit/f110_rlenv.py&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Courses\ESE 650\Final Project\ESE-650-Final-Project" />
