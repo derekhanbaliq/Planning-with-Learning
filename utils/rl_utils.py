@@ -65,26 +65,7 @@ def get_interpolated_traj_with_horizon(traj, h):
     return h_traj
 
 
-def densify_offset_traj(offset_traj, intep_num=80):
-    num_points = offset_traj.shape[0]  # horizon
-    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)  # index, 0 ~ 10
-
-    profile = np.zeros((intep_num, 3))
-    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
-        val = offset_traj[:, i]
-        interp_func = interp1d(steps, val.flatten(), kind='cubic')
-        new_steps = np.linspace(start=0, stop=num_points,
-                                num=intep_num, endpoint=False)  # even at 8m/s, the unit step is 0.2m
-        profile[:, i] = np.array(interp_func(new_steps))
-    # print(profile.shape)
-
-    return profile
-
-
-import numpy as np
-
-
-def add_lateral_offset2get_new_traj(traj, offset):
+def get_offset_traj(traj, offset):
     traj = np.array(traj)
     offset = np.asarray(offset)
 
@@ -118,4 +99,22 @@ def add_lateral_offset2get_new_traj(traj, offset):
     new_traj = np.hstack([new_xy_traj, traj[:, 2:]])
 
     return new_traj
+
+
+def densify_offset_traj(offset_traj, intep_num=80):
+    num_points = offset_traj.shape[0]  # horizon
+    steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)  # index, 0 ~ 10
+
+    profile = np.zeros((intep_num, 3))
+    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
+        val = offset_traj[:, i]
+        interp_func = interp1d(steps, val.flatten(), kind='cubic')
+        new_steps = np.linspace(start=0, stop=num_points,
+                                num=intep_num, endpoint=False)  # even at 8m/s, the unit step is 0.2m
+        profile[:, i] = np.array(interp_func(new_steps))
+    # print(profile.shape)
+
+    return profile
+
+
 

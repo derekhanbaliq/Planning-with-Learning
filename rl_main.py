@@ -12,7 +12,7 @@ import yaml
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from utils.render import Renderer, fix_gui
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
-from utils.rl_utils import add_lateral_offset2get_new_traj
+from utils.rl_utils import get_offset_traj
 from utils.waypoint_loader import WaypointLoader
 
 from f110_env_rl import F110RLEnv
