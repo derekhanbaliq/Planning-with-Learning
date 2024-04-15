@@ -12,6 +12,7 @@ from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 # from f110_env_rl import F110RLEnv
 from utils.render import Renderer, fix_gui
 from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
+from utils.rl_utils import add_lateral_offset2get_new_traj
 from utils.waypoint_loader import WaypointLoader
 
 
@@ -34,6 +35,7 @@ class F110RLEnv(F110Env):
         super().add_render_callback(self.renderer.render_front_traj)
         super().add_render_callback(self.renderer.render_horizon_traj)
         super().add_render_callback(self.renderer.render_lookahead_point)
+        super().add_render_callback(self.renderer.render_offset_traj)
         super().add_render_callback(fix_gui)
 
         # load F110Env
@@ -45,6 +47,7 @@ class F110RLEnv(F110Env):
         self.horizon = int(10)
         self.predict_time = 1.0  # get waypoints in coming seconds
         self.rl_max_speed = 5.0
+        self.offset = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
         # initialization
         init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
@@ -56,6 +59,8 @@ class F110RLEnv(F110Env):
         self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.renderer.horizon_traj = self.horizon_traj
+        self.offset_traj = add_lateral_offset2get_new_traj(self.horizon_traj,self.offset)
+        self.renderer.render_offset_traj = self.offset_traj
 
         # TODO: find a better way to config these params
         # self.num_beam = self.f110_env.sim.agents[0].num_beams
@@ -91,6 +96,9 @@ class F110RLEnv(F110Env):
         # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame - Tian
         # TODO: transform it into world frame - Tian
         # offset_horizon_traj =   # len = 10
+        # print(self.horizon_traj)
+        self.offset_traj = add_lateral_offset2get_new_traj(self.horizon_traj, self.offset)
+        self.renderer.offset_traj = self.offset_traj
 
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)

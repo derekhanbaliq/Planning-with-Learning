@@ -18,6 +18,9 @@ class Renderer:
         self.ahead_point = None
         self.last_ahead_point = None
 
+        self.offset_traj = None
+        self.last_offset_traj = []
+
     def render_waypoints(self, e):
         """
         update waypoints being drawn by EnvRenderer
@@ -96,6 +99,26 @@ class Renderer:
         b = e.batch.add(3, GL_TRIANGLES, None, create_triangle(scaled_point[0], scaled_point[1], 10),
                         ('c3B/stream', [0, 255, 0, 0, 255, 0, 0, 255, 0]))
         self.last_ahead_point = b
+
+    def render_offset_traj(self, e):
+        """Update offset trajectory being drawn."""
+        if self.offset_traj is None:
+            return  # Exit if no data available
+
+        point = self.offset_traj[:, :2]
+        scaled_point = 50 * point  # scaling the trajectory points
+
+        # Clearing previous trajectory points from the batch
+        for last_point in self.last_offset_traj:
+            last_point.delete()
+        self.last_offset_traj.clear()
+
+        # Adding new points to the batch
+        for i in range(scaled_point.shape[0]):
+            b = e.batch.add(1, GL_POINTS, None,
+                            ('v3f/stream', [scaled_point[i, 0], scaled_point[i, 1], 0]),
+                            ('c3B/stream', [0, 255, 0]))  # Green color
+            self.last_offset_traj.append(b)
 
 
 def fix_gui(e):
