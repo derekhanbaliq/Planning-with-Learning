@@ -1,17 +1,13 @@
 # -- coding: utf-8 --
 import os
-import gym
-from gym import spaces
+
 import numpy as np
 
-from f110_gym.envs.f110_env import F110Env
-
-import yaml
-
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
-# from f110_env_rl import F110RLEnv
+from f110_gym.envs.f110_env import F110Env
+from gym import spaces
 from utils.render import Renderer, fix_gui
-from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
+from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
 from utils.waypoint_loader import WaypointLoader
 
 
@@ -34,6 +30,7 @@ class F110RLEnv(F110Env):
         super().add_render_callback(self.renderer.render_front_traj)
         super().add_render_callback(self.renderer.render_horizon_traj)
         super().add_render_callback(self.renderer.render_lookahead_point)
+        super().add_render_callback(self.renderer.render_offset_traj)
         super().add_render_callback(fix_gui)
 
         # load F110Env
@@ -45,6 +42,7 @@ class F110RLEnv(F110Env):
         self.horizon = int(10)
         self.predict_time = 1.0  # get waypoints in coming seconds
         self.rl_max_speed = 5.0
+        self.offset = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
         # initialization
         init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
@@ -56,6 +54,8 @@ class F110RLEnv(F110Env):
         self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.renderer.horizon_traj = self.horizon_traj
+        self.offset_traj = get_offset_traj(self.horizon_traj,self.offset)
+        self.renderer.render_offset_traj = self.offset_traj
 
         # TODO: find a better way to config these params
         # self.num_beam = self.f110_env.sim.agents[0].num_beams
@@ -88,27 +88,22 @@ class F110RLEnv(F110Env):
     def env_step(self, offset=None):
         # offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
 
-        # TODO: interpolate the offsets for every waypoint in traj -> get offset traj in frenet frame - Tian
-        # TODO: transform it into world frame - Tian
-        # offset_horizon_traj =   # len = 10
-
+        # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
+        self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
+        self.renderer.offset_traj = self.offset_traj
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
         self.renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
-
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
         # print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
 
-        # step function in race car
-        # obs in time k+1
+        # step function in race car, time step is k+1 now
         self.obs, step_time, raw_done, raw_info = super().step(np.array([[steering, speed]]))
         self.lap_time += step_time
 
+        # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.renderer.front_traj = self.front_traj
-        # print(front_traj.shape)
-
-        # interpolate the front traj to get a 10-point-traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.renderer.horizon_traj = self.horizon_traj
 

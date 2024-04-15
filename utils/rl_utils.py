@@ -65,6 +65,42 @@ def get_interpolated_traj_with_horizon(traj, h):
     return h_traj
 
 
+def get_offset_traj(traj, offset):
+    traj = np.array(traj)
+    offset = np.asarray(offset)
+
+    # Extract only the x and y
+    xy_traj = traj[:, :2]
+
+    # Initialize tangent vectors in 2D
+    tangents = np.zeros_like(xy_traj)
+
+    # Calculate tangents for the trajectory points
+    tangents[0] = xy_traj[1] - xy_traj[0]  # tangent at the first point 1
+    tangents[-1] = xy_traj[-1] - xy_traj[-2]  # tangent at the last point 10
+    tangents[1:-1] = xy_traj[2:] - xy_traj[:-2]  # tangents for the middle points 2-9
+
+    # Normalize tangent vectors to get unit tangent vectors
+    norms = np.linalg.norm(tangents, axis=1)
+    unit_tangents = tangents / norms[:, np.newaxis]
+
+    # Calculate perpendicular vectors in 2D (rotate unit tangent vectors 90 degrees)
+    normals = np.array([-unit_tangents[:, 1], unit_tangents[:, 0]]).T
+
+    # Normalize normals for consistency and safety
+    normal_norms = np.linalg.norm(normals, axis=1)
+    unit_normals = normals / normal_norms[:, np.newaxis]
+
+    # Calculate new points by adding the scaled normal vectors to original points
+    offsets_rescaled = offset[:, np.newaxis] * unit_normals
+    new_xy_traj = xy_traj + offsets_rescaled
+
+    # Combine the new x and y coordinates with the original 'v' values
+    new_traj = np.hstack([new_xy_traj, traj[:, 2:]])
+
+    return new_traj
+
+
 def densify_offset_traj(offset_traj, intep_num=80):
     num_points = offset_traj.shape[0]  # horizon
     steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)  # index, 0 ~ 10
@@ -79,4 +115,6 @@ def densify_offset_traj(offset_traj, intep_num=80):
     # print(profile.shape)
 
     return profile
+
+
 
