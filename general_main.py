@@ -15,7 +15,7 @@ from controllers.lqr_steering_speed import LQRSteeringSpeedController
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from f110_gym.envs.f110_env import F110Env
 from utils.render import Renderer, fix_gui
-from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
+from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
 from utils.waypoint_loader import WaypointLoader
 from f110_env_rl import F110RLEnv
 
