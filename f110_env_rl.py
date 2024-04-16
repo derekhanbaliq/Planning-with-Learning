@@ -13,6 +13,9 @@ from utils.waypoint_loader import WaypointLoader
 
 class F110RLEnv(F110Env):
     def __init__(self, **kwargs):
+        # render flag
+        self.render_flag = kwargs['render']
+        
         # load map
         map_name = 'levine_2nd'  # levine_2nd, skir
         map_path = os.path.abspath(os.path.join('maps', map_name))
@@ -26,12 +29,14 @@ class F110RLEnv(F110Env):
 
         # load renderer
         self.renderer = Renderer(self.waypoints)
-        super().add_render_callback(self.renderer.render_waypoints)
-        super().add_render_callback(self.renderer.render_front_traj)
-        super().add_render_callback(self.renderer.render_horizon_traj)
-        super().add_render_callback(self.renderer.render_lookahead_point)
-        super().add_render_callback(self.renderer.render_offset_traj)
-        super().add_render_callback(fix_gui)
+        
+        if self.render_flag:
+            super().add_render_callback(self.renderer.render_waypoints)
+            super().add_render_callback(self.renderer.render_front_traj)
+            super().add_render_callback(self.renderer.render_horizon_traj)
+            super().add_render_callback(self.renderer.render_lookahead_point)
+            super().add_render_callback(self.renderer.render_offset_traj)
+            super().add_render_callback(fix_gui)
 
         # load F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
@@ -108,11 +113,14 @@ class F110RLEnv(F110Env):
 
         # get init horizon traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
-        self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
-        self.renderer.horizon_traj = self.horizon_traj
         self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
-        self.renderer.render_offset_traj = self.offset_traj
+        
+        if self.render_flag:
+            self.renderer.front_traj = self.front_traj
+            self.renderer.horizon_traj = self.horizon_traj
+            self.renderer.render_offset_traj = self.offset_traj
+        
         
         
         network_obs = self.get_network_obs()
@@ -121,15 +129,12 @@ class F110RLEnv(F110Env):
     
     def step(self, offset=None):
         # offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
-
+        self.offset = offset
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
         self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
-        self.renderer.offset_traj = self.offset_traj
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
-        self.renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
-        # print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
 
         # step function in race car, time step is k+1 now
         self.obs, step_time, raw_done, raw_info = super().step(np.array([[steering, speed]]))
@@ -137,24 +142,29 @@ class F110RLEnv(F110Env):
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
-        self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
-        self.renderer.horizon_traj = self.horizon_traj
+        
 
-        # TODO: design the reward function
+        
+
 
         # TODO: modify the next observation output (lidar, front traj, pose)
-        # only have horizon traj
-        # observation = self.horizon_traj.flatten()  # + lidar & pose
-        
         network_obs = self.get_network_obs()
-
-        # observation = raw_obs
-        reward = step_time
+        
+        # TODO: design the reward function
+        # reward = step_time
+        reward = -1e3 * np.linalg.norm(offset, ord=1)
+        
+        
         self.done = raw_done
         info = raw_info
-
-        super().render('human')
+        
+        if self.render_flag:
+            self.renderer.offset_traj = self.offset_traj
+            self.renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
+            self.renderer.front_traj = self.front_traj
+            self.renderer.horizon_traj = self.horizon_traj
+            super().render('human')
 
         return network_obs, reward, self.done, info
 

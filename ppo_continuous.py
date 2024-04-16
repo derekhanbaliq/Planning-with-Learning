@@ -11,9 +11,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.normal import Normal
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
-from gym_env.continuous_mountain_car import Continuous_MountainCarEnv
+# from gym_env.continuous_mountain_car import Continuous_MountainCarEnv
 from f110_env_rl import F110RLEnv
 from tqdm import tqdm
 
@@ -82,19 +82,19 @@ def parse_args():
     # fmt: on
     return args
 
-def make_env(env_id, idx, capture_video, run_name, gamma):
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag):
 
     def thunk():
         # env = F110Env_Continuous_Planner()
         # env = Continuous_MountainCarEnv(render_mode='human')
-        env = F110RLEnv()
+        env = F110RLEnv(render=render_flag)
         
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
         
         # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
-        # env = gym.wrappers.RecordEpisodeStatistics(env)
+        env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
@@ -161,11 +161,11 @@ if __name__ == "__main__":
             # monitor_gym=True, no longer works for gymnasium
             save_code=True,
         )
-    # writer = SummaryWriter(f"runs/{run_name}")
-    # writer.add_text(
-    #     "hyperparameters",
-    #     "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    # )
+    writer = SummaryWriter(f"runs/{run_name}")
+    writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+    )
 
     # TRY NOT TO MODIFY: seeding
     random.seed(args.seed)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma) for i in range(args.num_envs)]
+        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render) for i in range(args.num_envs)]
     )
     # envs = make_env(args.env_id, 0, args.capture_video, run_name, args.gamma)
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     global_step = 0
     start_time = time.time()
     # next_obs = envs.reset(seed=args.seed)
-    print(args.seed)
+    # print(args.seed)
     next_obs = envs.reset()
     # next_obs = envs.observationsS
     next_obs = torch.Tensor(next_obs).to(device)
@@ -246,16 +246,16 @@ if __name__ == "__main__":
                     rew = info['episode']['r']
                     if rew > high_reward:
                         high_reward = rew
-                        torch.save({
-                            'global_step': global_step,
-                            'model_state_dict': agent.state_dict(),
-                            'optimizer_state_dict': optimizer.state_dict(),
-                            'reward': rew
-                        }, f"runs/{run_name}/global_step={global_step}_reward={rew}_model.pt")
+                        # torch.save({
+                        #     'global_step': global_step,
+                        #     'model_state_dict': agent.state_dict(),
+                        #     'optimizer_state_dict': optimizer.state_dict(),
+                        #     'reward': rew
+                        # }, f"runs/{run_name}/global_step={global_step}_reward={rew}_model.pt")
                     print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                    # writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                    # writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
-                    # envs.envs[i].reset()
+                    writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                    writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                    envs.envs[i].reset()
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
@@ -347,16 +347,16 @@ if __name__ == "__main__":
         #         }, f"runs/{run_name}/{update}_model.pt")
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
-        # writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
-        # writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        # writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        # writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        # writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        # writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        # writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-        # writer.add_scalar("losses/explained_variance", explained_var, global_step)
+        writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
+        writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
+        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
+        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
+        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
+        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
+        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
+        writer.add_scalar("losses/explained_variance", explained_var, global_step)
         # print("SPS:", int(global_step / (time.time() - start_time)))
-        # writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
         if args.track and args.capture_video:
             for filename in os.listdir(f"videos/{run_name}"):
@@ -365,4 +365,4 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
 
     envs.close()
-    # writer.close()
+    writer.close()
