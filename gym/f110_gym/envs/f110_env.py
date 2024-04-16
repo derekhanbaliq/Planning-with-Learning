@@ -335,7 +335,8 @@ class F110Env(gym.Env):
 
         # get no input observations
         action = np.zeros((self.num_agents, 2))
-        obs, reward, done, info = self.step(action)
+        # obs, reward, done, info = self.step(action)
+        obs, reward, done, info = F110Env.step(self, action)
 
         self.render_obs = {
             'ego_idx': obs['ego_idx'],

@@ -44,18 +44,6 @@ class F110RLEnv(F110Env):
         self.rl_max_speed = 5.0
         self.offset = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
-        # initialization
-        init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
-        self.obs, _, self.done, _ = super().reset(init_pos)
-        self.lap_time = 0.0
-
-        # get init horizon traj
-        self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
-        self.renderer.front_traj = self.front_traj
-        self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
-        self.renderer.horizon_traj = self.horizon_traj
-        self.offset_traj = get_offset_traj(self.horizon_traj,self.offset)
-        self.renderer.render_offset_traj = self.offset_traj
 
         # TODO: find a better way to config these params
         # self.num_beam = self.f110_env.sim.agents[0].num_beams
@@ -67,25 +55,71 @@ class F110RLEnv(F110Env):
         self.max_pose = 1e3
         self.min_pose = -self.max_pose
 
-        self.max_offset = 10
+        self.max_offset = 1
         self.min_offset = -self.max_offset
 
         # observation: lidar scans, reference front points, current x&y positions
         # need to be changed to Box
-        self.single_observation_space = spaces.Dict(
-            {"scan": spaces.Box(low=0, high=self.max_lidar_range, shape=(self.num_beam,), dtype=np.float32),
-             "front": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(self.horizon,),
-                                 dtype=np.float32),
-             "pose": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(2,), dtype=np.float32)})
-
+        # self.single_observation_space = spaces.Dict(
+        #     {"scan": spaces.Box(low=0, high=self.max_lidar_range, shape=(self.num_beam,), dtype=np.float32),
+        #      "front": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(self.horizon,),
+        #                          dtype=np.float32),
+        #      "pose": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(2,), dtype=np.float32)})
+        
+        
+        low_lidar = 0 * np.ones((self.num_beam,), dtype=np.float32)
+        high_lidar = self.max_lidar_range * np.ones((self.num_beam,), dtype=np.float32)
+        
+        low_traj = self.min_pose * np.ones((self.horizon*2, ), dtype=np.float32)
+        high_traj = self.max_pose * np.ones((self.horizon*2, ), dtype=np.float32)
+        
+        low_pose = self.min_pose * np.ones((2, ), dtype=np.float32)
+        high_pose = self.max_pose * np.ones((2, ), dtype=np.float32)
+        
+        obs_low_bound = np.hstack((low_lidar, low_traj, low_pose))
+        obs_high_bound = np.hstack((high_lidar, high_traj, high_pose))
+        
+        self.observation_space = spaces.Box(low=obs_low_bound, high=obs_high_bound, shape=(obs_high_bound.shape[0], ), dtype=np.float32)
+        self.single_observation_space = spaces.Box(low=obs_low_bound, high=obs_high_bound, shape=(obs_high_bound.shape[0], ), dtype=np.float32)
         # action: offsets in n horizons
-        self.single_action_space = spaces.Box(low=self.min_offset, high=self.max_offset, shape=(self.horizon,),
-                                              dtype=np.float32)
+        self.action_space = spaces.Box(low=self.min_offset, high=self.max_offset, shape=(self.horizon,), dtype=np.float32)
+        self.single_action_space = spaces.Box(low=self.min_offset, high=self.max_offset, shape=(self.horizon,), dtype=np.float32)
 
-        print("observation space shape", self.single_observation_space.shape)
-        print("action space shape", self.single_action_space.shape)
+        # print("observation space shape", self.single_observation_space.shape)
+        # print("action space shape", self.single_action_space.shape)
+    def get_network_obs(self):
+        lidar_obs = self.obs['scans'][0].flatten()
+        traj_obs = self.horizon_traj[:, :2].flatten()
+        pose_x_obs = self.obs['poses_x'][0]
+        pose_y_obs = self.obs['poses_y'][0]
+        
+        pose_obs = np.array([pose_x_obs, pose_y_obs]).reshape((-1,))
+        
+        network_obs = np.hstack((lidar_obs, traj_obs, pose_obs))
+        return network_obs
 
-    def env_step(self, offset=None):
+
+    def reset(self, seed=1):
+        # initialization
+        init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
+        self.obs, _, self.done, _ = super().reset(init_pos)
+        # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
+        self.lap_time = 0.0
+
+        # get init horizon traj
+        self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
+        self.renderer.front_traj = self.front_traj
+        self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
+        self.renderer.horizon_traj = self.horizon_traj
+        self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
+        self.renderer.render_offset_traj = self.offset_traj
+        
+        
+        network_obs = self.get_network_obs()
+        return network_obs
+    
+    
+    def step(self, offset=None):
         # offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
 
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
@@ -111,7 +145,9 @@ class F110RLEnv(F110Env):
 
         # TODO: modify the next observation output (lidar, front traj, pose)
         # only have horizon traj
-        observation = self.horizon_traj.flatten()  # + lidar & pose
+        # observation = self.horizon_traj.flatten()  # + lidar & pose
+        
+        network_obs = self.get_network_obs()
 
         # observation = raw_obs
         reward = step_time
@@ -120,7 +156,7 @@ class F110RLEnv(F110Env):
 
         super().render('human')
 
-        return observation, reward, self.done, info
+        return network_obs, reward, self.done, info
 
     # def reset(self, init_pose):
     #     obs, reward, done, info = super().reset(init_pose)
