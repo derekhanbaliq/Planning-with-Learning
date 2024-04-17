@@ -1,4 +1,10 @@
 # -- coding: utf-8 --
+
+"""
+    F1TENTH gym environment of the RL planner
+    Author: Derek Zhou, Biao Wang, Tian Tan
+"""
+
 import os
 
 import numpy as np
@@ -7,7 +13,7 @@ from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from f110_gym.envs.f110_env import F110Env
 from gym import spaces
 from utils.render import Renderer, fix_gui
-from utils.rl_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
+from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
 from utils.waypoint_loader import WaypointLoader
 
 
