@@ -16,83 +16,89 @@ from torch.utils.tensorboard import SummaryWriter
 # from gym_env.continuous_mountain_car import Continuous_MountainCarEnv
 from f110_env_rl import F110RLEnv
 from tqdm import tqdm
+from pathlib import Path
+
 
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
-        help="the name of this experiment")
+                        help="the name of this experiment")
     parser.add_argument("--seed", type=int, default=1,
-        help="seed of the experiment")
+                        help="seed of the experiment")
     parser.add_argument("--torch-deterministic", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="if toggled, `torch.backends.cudnn.deterministic=False`")
+                        help="if toggled, `torch.backends.cudnn.deterministic=False`")
     parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="if toggled, cuda will be enabled by default")
+                        help="if toggled, cuda will be enabled by default")
     parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
-        help="if toggled, this experiment will be tracked with Weights and Biases")
+                        help="if toggled, this experiment will be tracked with Weights and Biases")
     parser.add_argument("--wandb-project-name", type=str, default="f1tenth_planner",
-        help="the wandb's project name")
+                        help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None,
-        help="the entity (team) of wandb's project")
+                        help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
-        help="whether to capture videos of the agent performances (check out `videos` folder)")
+                        help="whether to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
-        help="the id of the environment")
+                        help="the id of the environment")
     parser.add_argument("--total-timesteps", type=int, default=1000000,
-        help="total timesteps of the experiments")
+                        help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
-        help="the learning rate of the optimizer")
+                        help="the learning rate of the optimizer")
     parser.add_argument("--num-envs", type=int, default=1,
-        help="the number of parallel game environments")
+                        help="the number of parallel game environments")
     parser.add_argument("--num-steps", type=int, default=2048,
-        help="the number of steps to run in each environment per policy rollout")
+                        help="the number of steps to run in each environment per policy rollout")
     parser.add_argument("--anneal-lr", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="Toggle learning rate annealing for policy and value networks")
+                        help="Toggle learning rate annealing for policy and value networks")
     parser.add_argument("--gamma", type=float, default=0.99,
-        help="the discount factor gamma")
+                        help="the discount factor gamma")
     parser.add_argument("--gae-lambda", type=float, default=0.95,
-        help="the lambda for the general advantage estimation")
+                        help="the lambda for the general advantage estimation")
     parser.add_argument("--num-minibatches", type=int, default=32,
-        help="the number of mini-batches")
+                        help="the number of mini-batches")
     parser.add_argument("--update-epochs", type=int, default=10,
-        help="the K epochs to update the policy")
+                        help="the K epochs to update the policy")
     parser.add_argument("--norm-adv", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="Toggles advantages normalization")
+                        help="Toggles advantages normalization")
     parser.add_argument("--clip-coef", type=float, default=0.2,
-        help="the surrogate clipping coefficient")
+                        help="the surrogate clipping coefficient")
     parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
-        help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
+                        help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
     parser.add_argument("--ent-coef", type=float, default=0.0,
-        help="coefficient of the entropy")
+                        help="coefficient of the entropy")
     parser.add_argument("--vf-coef", type=float, default=0.5,
-        help="coefficient of the value function")
+                        help="coefficient of the value function")
     parser.add_argument("--max-grad-norm", type=float, default=0.5,
-        help="the maximum norm for the gradient clipping")
+                        help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
-        help="the target KL divergence threshold")
+                        help="the target KL divergence threshold")
     parser.add_argument("--time-horizon", "--t", type=int, default=1,
-        help="time horizon for predicting trajectory")
+                        help="time horizon for predicting trajectory")
+
+    # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
-        help="if toggled, render will be enabled.")
+                        help="if toggled, render will be enabled.")
+
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     # fmt: on
+
     return args
 
-def make_env(env_id, idx, capture_video, run_name, gamma, render_flag):
 
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag):
     def thunk():
         # env = F110Env_Continuous_Planner()
         # env = Continuous_MountainCarEnv(render_mode='human')
         env = F110RLEnv(render=render_flag)
-        
+
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
-        
+
         # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
@@ -363,6 +369,9 @@ if __name__ == "__main__":
                 if filename not in video_filenames and filename.endswith(".mp4"):
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
+
+    model_path = Path(f'test.pkl')
+    torch.save(agent.state_dict(), model_path)
 
     envs.close()
     writer.close()
