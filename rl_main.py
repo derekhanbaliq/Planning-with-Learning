@@ -14,6 +14,7 @@ from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj
 from utils.traj_utils import get_offset_traj
 from utils.waypoint_loader import WaypointLoader
+from utils.occ_grid import OccGrid
 
 from f110_env_rl import F110RLEnv
 

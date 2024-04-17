@@ -15,6 +15,8 @@ from gym import spaces
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
 from utils.waypoint_loader import WaypointLoader
+from utils.occ_grid import OccGrid
+
 
 
 class F110RLEnv(F110Env):
@@ -53,9 +55,16 @@ class F110RLEnv(F110Env):
         # initialization
         init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
         self.obs, _, self.done, _ = super().reset(init_pos)
+        # print(self.obs['scans']
         self.lap_time = 0.0
 
+        self.occ_grid = OccGrid(self.obs['scans'])
+
+        self.occgrid = self.get_OccGrid(self.obs['scans'])
+
         # get init horizon traj
+        # self.occgrid = OccGrid.get_OccGrid(self.obs['scans'])
+        print(self.occgrid)
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
