@@ -1,39 +1,25 @@
-"""
-    helper functions for trajectories
-    Author: Derek Zhou, Biao Wang, Tian Tan
-"""
 import numpy as np
-# import matplotlib as plt
+import matplotlib.pyplot as plt
+
+
 class OccGrid:
+    def __init__(self, scans, poses_x, poses_y, poses_theta):
+        self.lidar_scan = np.array(scans)  # Lidar scan data
+        self.poses_x = poses_x  # x-positions of agents
+        self.poses_y = poses_y  # y-positions of agents
+        self.poses_theta = poses_theta  # orientations of agents in radians
+        self.num_points = self.lidar_scan.shape[1]  # Expected to be 1080
+        self.angles = (np.linspace(-135, 135, self.num_points)) * (np.pi / 180)
 
-    def __init__(self,obs):
-        self.lidar_scan = obs # 1080*1
-        self.num_points = self.lidar_scan.shape[0] # 1080
-        self.angles = self.angles = np.linspace(-135, 135, self.num_points) * (np.pi / 180)
+    def get_OccGrid(self, idx=0):
+        # Calculate local coordinates in the LiDAR's frame of reference
+        local_x_coords = self.lidar_scan[idx] * np.cos(self.angles)
+        local_y_coords = self.lidar_scan[idx] * np.sin(self.angles)
 
+        # Convert local coordinates to global coordinates considering the orientation
+        cos_theta = np.cos(self.poses_theta[idx])
+        sin_theta = np.sin(self.poses_theta[idx])
+        global_x_coords = cos_theta * local_x_coords - sin_theta * local_y_coords + self.poses_x[idx]
+        global_y_coords = sin_theta * local_x_coords + cos_theta * local_y_coords + self.poses_y[idx]
 
-    def get_OccGrid(self):
-        # calculate x and y coords
-        x_coords = self.data * np.cos(self.angles)  # r * cos(θ)
-        y_coords = self.data * np.sin(self.angles)  # r * sin(θ)
-        return np.vstack((x_coords, y_coords)).T  # 1080 x 2
-    # def downsample_lidar_scan(data, observation_shape, method):
-    #     if method == "simple":
-    #         # print("observation_shape type: ", type(observation_shape))
-    #         # print("observation_shape: ", observation_shape)
-    #         obs_gap = int(1080 / observation_shape)
-    #         processed_data = data[::obs_gap]
-    #     else:
-    #         processed_data = data
-    #
-    #     return processed_data
-
-
-
-# obs =
-# # data = np.random.rand(1080, 1) * 100
-# grid = OccGrid(data)
-# xy_coords = grid.get_OccGrid()
-# # print(xy_coords)
-# print(data.shape[0])
-
+        return np.vstack((global_x_coords, global_y_coords)).T

@@ -31,7 +31,6 @@ class F110RLEnv(F110Env):
 
         # load controller
         self.controller = PurePursuit(self.waypoints)
-
         # load renderer
         self.renderer = Renderer(self.waypoints)
         super().add_render_callback(self.renderer.render_waypoints)
@@ -39,6 +38,7 @@ class F110RLEnv(F110Env):
         super().add_render_callback(self.renderer.render_horizon_traj)
         super().add_render_callback(self.renderer.render_lookahead_point)
         super().add_render_callback(self.renderer.render_offset_traj)
+        super().add_render_callback(self.renderer.render_occ_grid)
         super().add_render_callback(fix_gui)
 
         # load F110Env
@@ -55,22 +55,20 @@ class F110RLEnv(F110Env):
         # initialization
         init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
         self.obs, _, self.done, _ = super().reset(init_pos)
-        # print(self.obs['scans']
         self.lap_time = 0.0
 
-        self.occ_grid = OccGrid(self.obs['scans'])
-
-        self.occgrid = self.get_OccGrid(self.obs['scans'])
-
-        # get init horizon traj
-        # self.occgrid = OccGrid.get_OccGrid(self.obs['scans'])
-        print(self.occgrid)
+        # print(self.occ_grid)
+        self.occ_grid = OccGrid(self.obs['scans'], self.obs['poses_x'], self.obs['poses_y'],
+                                self.obs['poses_theta']).get_OccGrid()
+        self.renderer.render_occ_grid = self.occ_grid
+        self.renderer.update_occ_grid(self.occ_grid)
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.renderer.front_traj = self.front_traj
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.renderer.horizon_traj = self.horizon_traj
         self.offset_traj = get_offset_traj(self.horizon_traj,self.offset)
         self.renderer.render_offset_traj = self.offset_traj
+
 
         # TODO: find a better way to config these params
         # self.num_beam = self.f110_env.sim.agents[0].num_beams
@@ -102,8 +100,8 @@ class F110RLEnv(F110Env):
 
     def env_step(self, offset=None):
         # offset = [0., 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.0]  # fake offset, [-1, 1], half width [right, left]
-
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
+
         self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
         self.renderer.offset_traj = self.offset_traj
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
@@ -114,7 +112,14 @@ class F110RLEnv(F110Env):
 
         # step function in race car, time step is k+1 now
         self.obs, step_time, raw_done, raw_info = super().step(np.array([[steering, speed]]))
+        self.occ_grid = OccGrid(self.obs['scans'], self.obs['poses_x'], self.obs['poses_y'],
+                                self.obs['poses_theta']).get_OccGrid()
+        # print(self.occ_grid)
+        self.renderer.update_occ_grid(self.occ_grid)
+        self.renderer.render_occ_grid = self.occ_grid
+
         self.lap_time += step_time
+
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
