@@ -95,7 +95,7 @@ def main():
             network_obs = torch.from_numpy(network_obs).to(dtype=torch.float).resize(1, network_obs.shape[0])
             action, sum_log_prob, sum_entropy, value = model.get_action_and_value(network_obs)
             offset = action.numpy().flatten()
-            # print(offset)
+            print(offset)
 
             offset_traj = get_offset_traj(horizon_traj, offset)
             renderer.offset_traj = offset_traj

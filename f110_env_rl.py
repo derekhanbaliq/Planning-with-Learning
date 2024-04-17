@@ -137,7 +137,7 @@ class F110RLEnv(F110Env):
 
         # TODO: design the reward function
         # reward = step_time
-        reward = -1e3 * np.linalg.norm(offset, ord=1)
+        reward = -1e3 * np.linalg.norm(offset, ord=2)
 
         self.done = raw_done
         info = raw_info
