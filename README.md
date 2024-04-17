@@ -39,4 +39,11 @@ tensorboard --logdir runs  # open another terminal to see the training process
 
 ## Usage
 
-TBD
+Train your model using
+```bash
+python ppo_continuous.py --total-timesteps 50000  # for simplicity
+```
+Test your model using
+```bash
+python general_main.py
+```

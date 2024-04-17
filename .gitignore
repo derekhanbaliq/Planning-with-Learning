@@ -2,6 +2,7 @@
 __pycache__
 examples
 gym/f110_gym.egg-info
+runs
 *.pyc
 *.nbc
 *.nbi
