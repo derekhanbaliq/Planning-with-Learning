@@ -6,7 +6,7 @@ __pycache__
 examples
 gym/f110_gym.egg-info
 runs
-utils/test_add_lateral_offset2get_new_traj.py
+utils/test_add_lateral_offset.py
 f110_rlenv_reference.py
 path_tracking_main.py
 rl_main.py
