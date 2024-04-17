@@ -1,4 +1,8 @@
-# docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_continuous_actionpy
+"""
+    Modified PPO for Continuous Action
+    References: https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_continuous_actionpy
+"""
+
 import argparse
 import os
 import random
@@ -155,9 +159,9 @@ class Agent(nn.Module):
 if __name__ == "__main__":
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+
     if args.track:
         import wandb
-
         wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
@@ -167,6 +171,7 @@ if __name__ == "__main__":
             # monitor_gym=True, no longer works for gymnasium
             save_code=True,
         )
+
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
@@ -185,7 +190,6 @@ if __name__ == "__main__":
     envs = gym.vector.SyncVectorEnv(
         [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render) for i in range(args.num_envs)]
     )
-    # envs = make_env(args.env_id, 0, args.capture_video, run_name, args.gamma)
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
@@ -202,10 +206,7 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    # next_obs = envs.reset(seed=args.seed)
-    # print(args.seed)
     next_obs = envs.reset()
-    # next_obs = envs.observationsS
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
@@ -221,21 +222,18 @@ if __name__ == "__main__":
 
         for step in range(0, args.num_steps):
             global_step += 1 * args.num_envs
-            # next_obs is a (1080 + T, 1) numpy array with lidar scans and targetPoint
             obs[step] = next_obs
             dones[step] = next_done
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                # action here is the "betterPoint"
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, done, infos = envs.step(action.cpu().numpy())
-            # next_obs, reward, done, infos = envs.env_step(action.cpu().numpy())
+            next_obs, reward, done, infos = envs.step(action.cpu().numpy())  # vector_env's step!
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(done).to(device)
             if args.render:
@@ -370,6 +368,7 @@ if __name__ == "__main__":
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
 
+    # TODO: refine saving & naming
     model_path = Path(f'test.pkl')
     torch.save(agent.state_dict(), model_path)
 
