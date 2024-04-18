@@ -1,7 +1,7 @@
 import numpy as np
 # from pyglet.gl import *  # game interface
 from pyglet.gl import GL_POINTS, GL_QUADS, GL_TRIANGLES  # game interface
-from pyglet.gl import glPointSize # import this to adjust pixel size
+
 
 class Renderer:
 
@@ -20,9 +20,6 @@ class Renderer:
 
         self.offset_traj = None
         self.last_offset_traj = []
-
-        self.occ_grid = None
-        self.last_occ_grid = []
 
     def render_waypoints(self, e):
         """
@@ -95,7 +92,6 @@ class Renderer:
                                    x + size, y - size / 2])
 
         scaled_point = 50. * self.ahead_point
-        # print(scaled_point)
 
         if self.last_ahead_point is not None:
             self.last_ahead_point.delete()
@@ -124,31 +120,6 @@ class Renderer:
                             ('c3B/stream', [0, 255, 0]))  # Green color
             self.last_offset_traj.append(b)
 
-    def render_occ_grid(self, e):
-        """Render the occupancy grid as Green points."""
-        if self.occ_grid is None:
-            print("Warning: occupancy grid data is not available.")
-            return
-
-        point = self.occ_grid  #
-        scaled_point = 50 * point
-        glPointSize(2) # adjust pixel size from 1 to 2
-
-        for last_point in self.last_occ_grid:
-            last_point.delete()
-        self.last_occ_grid.clear()
-
-        for i in range(scaled_point.shape[0]):
-            b = e.batch.add(1, GL_POINTS, None,
-                            ('v3f/stream', [scaled_point[i, 0], scaled_point[i, 1], 0]),
-                            ('c3B/stream', [0, 255, 0]))  # Green color
-            self.last_occ_grid.append(b)
-        glPointSize(1.0)
-        # Reset point size to default (1.0)
-
-    def update_occ_grid(self, new_grid):
-        """Method to update the occupancy grid data."""
-        self.occ_grid = new_grid
 
 def fix_gui(e):
     # update camera to follow car
