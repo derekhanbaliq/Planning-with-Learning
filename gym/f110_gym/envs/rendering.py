@@ -135,6 +135,8 @@ class EnvRenderer(pyglet.window.Window):
         map_img = np.array(Image.open(map_path + map_ext).transpose(Image.FLIP_TOP_BOTTOM)).astype(np.float64)
         map_height = map_img.shape[0]
         map_width = map_img.shape[1]
+        
+        # map_img[:, 400] = 0
 
         # convert map pixels to coordinates
         range_x = np.arange(map_width)

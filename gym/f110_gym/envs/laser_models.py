@@ -399,9 +399,15 @@ class ScanSimulator2D(object):
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         self.map_img = self.map_img.astype(np.float64)
 
+
+        # TODO: we can add obstacles here
+
         # grayscale -> binary
         self.map_img[self.map_img <= 128.] = 0.
         self.map_img[self.map_img > 128.] = 255.
+        
+        # TODO: need also add obstacle here for rendering
+        # self.map_img[:, 400] = 0
 
         self.map_height = self.map_img.shape[0]
         self.map_width = self.map_img.shape[1]
@@ -423,6 +429,10 @@ class ScanSimulator2D(object):
 
         # get the distance transform
         self.dt = get_dt(self.map_img, self.map_resolution)
+        
+        
+        print("the shape of origin map img:", self.map_img.shape)
+        print("the shape of dt matrix:", self.dt.shape)
 
         return True
 
