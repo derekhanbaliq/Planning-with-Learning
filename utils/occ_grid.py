@@ -1,5 +1,5 @@
 """
-    helper functions for trajectories
+    the occupancy grid & helper functions for the perception module
     Author: Derek Zhou, Biao Wang, Tian Tan
 """
 
