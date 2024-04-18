@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def add_lateral_offset2get_new_traj(traj, offset):
     traj = np.array(traj)
     offset = np.asarray(offset)
@@ -25,6 +26,7 @@ def add_lateral_offset2get_new_traj(traj, offset):
     new_traj = np.hstack([new_xy_traj, traj[:, 2:]])
     return new_traj, unit_normals, offsets_rescaled
 
+
 traj = np.array([
     [9.263957, 7.4023188, 4.4782284],
     [9.00371679, 7.86495135, 4.24964586],
@@ -41,7 +43,7 @@ offset = np.array([0.5, 0.5, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2, 0.1, 0.1])
 
 new_traj, unit_normals, offsets_rescaled = add_lateral_offset2get_new_traj(traj, offset)
 
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(8, 3))
 ax.plot(traj[:, 0], traj[:, 1], 'o-', label='Original Trajectory')
 ax.plot(new_traj[:, 0], new_traj[:, 1], 's-', label='Trajectory with Lateral Offset')
 for point, magnitude in zip(traj, offsets_rescaled):
