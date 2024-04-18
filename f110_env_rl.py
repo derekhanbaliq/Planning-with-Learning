@@ -87,6 +87,12 @@ class F110RLEnv(F110Env):
     def reset(self, seed=1):
         # initialization
         init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
+        
+        # np.random.seed(0)
+        init_index = np.random.randint(0, self.waypoints.x.shape[0])        
+        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index], 0.0]).reshape((1, -1))
+
+        
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
 

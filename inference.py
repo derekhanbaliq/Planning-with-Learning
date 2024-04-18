@@ -55,11 +55,17 @@ def main():
 
     lap_time = 0.0
     init_pos = np.array([[0.0, 0.0, 0.0]])
+    
+    init_index = np.random.randint(0, waypoints.x.shape[0])
+    init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
+    # print(init_index)
+    # print("init pose", init_pos)
+    
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('test.pkl'))
+    model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
