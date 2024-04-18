@@ -58,7 +58,7 @@ def main():
 
     rl_env = F110RLEnv(render=False)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('test.pkl'))
+    model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:

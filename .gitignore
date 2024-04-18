@@ -5,6 +5,7 @@ __pycache__
 *.nbi
 examples
 gym/f110_gym.egg-info
+gym/gym_env
 runs
 utils/test_add_lateral_offset.py
 f110_rlenv_reference.py
