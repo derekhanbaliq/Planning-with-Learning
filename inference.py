@@ -56,7 +56,7 @@ def main():
     init_pos = np.array([[0.0, 0.0, 0.0]])
     obs, _, done, _ = env.reset(init_pos)
 
-    rl_env = F110RLEnv(render=False)
+    rl_env = F110RLEnv(render=False, map_name=map_name)
     model = Agent(rl_env)
     model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
 

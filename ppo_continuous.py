@@ -8,19 +8,18 @@ import os
 import random
 import time
 from distutils.util import strtobool
+from pathlib import Path
 
-import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
-
-# from gym_env.continuous_mountain_car import Continuous_MountainCarEnv
-from f110_env_rl import F110RLEnv
 from tqdm import tqdm
-from pathlib import Path
+
+import gym
+from f110_env_rl import F110RLEnv
 
 
 def parse_args():
@@ -84,6 +83,8 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
+    parser.add_argument("--map-name", type=str, default="levine_2nd",
+                        help="the map of the environment")
 
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
@@ -93,12 +94,9 @@ def parse_args():
     return args
 
 
-def make_env(env_id, idx, capture_video, run_name, gamma, render_flag):
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name):
     def thunk():
-        # env = F110Env_Continuous_Planner()
-        # env = Continuous_MountainCarEnv(render_mode='human')
-        env = F110RLEnv(render=render_flag)
-
+        env = F110RLEnv(render=render_flag, map_name=map_name)
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
@@ -162,6 +160,7 @@ if __name__ == "__main__":
 
     if args.track:
         import wandb
+
         wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
@@ -188,7 +187,8 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render) for i in range(args.num_envs)]
+        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name) for i in
+         range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
