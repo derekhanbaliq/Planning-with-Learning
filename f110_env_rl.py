@@ -15,6 +15,7 @@ from gym import spaces
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
 from utils.waypoint_loader import WaypointLoader
+from utils.occ_grid import OccGrid
 
 
 class F110RLEnv(F110Env):
@@ -28,14 +29,16 @@ class F110RLEnv(F110Env):
         csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)
         self.waypoints = WaypointLoader(map_name, csv_data)
         self.controller = PurePursuit(self.waypoints)
+
+        # load renderer
         self.renderer = Renderer(self.waypoints)
-        if self.render_flag:
-            super().add_render_callback(self.renderer.render_waypoints)
-            super().add_render_callback(self.renderer.render_front_traj)
-            super().add_render_callback(self.renderer.render_horizon_traj)
-            super().add_render_callback(self.renderer.render_lookahead_point)
-            super().add_render_callback(self.renderer.render_offset_traj)
-            super().add_render_callback(fix_gui)
+        super().add_render_callback(self.renderer.render_waypoints)
+        super().add_render_callback(self.renderer.render_front_traj)
+        super().add_render_callback(self.renderer.render_horizon_traj)
+        super().add_render_callback(self.renderer.render_lookahead_point)
+        super().add_render_callback(self.renderer.render_offset_traj)
+        super().add_render_callback(self.renderer.render_occ_grid)
+        super().add_render_callback(fix_gui)
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
@@ -90,22 +93,47 @@ class F110RLEnv(F110Env):
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
 
-        # get init horizon traj
+        # print(self.occ_grid)
+        self.occ_grid = OccGrid(self.obs['scans'], self.obs['poses_x'], self.obs['poses_y'],
+                                self.obs['poses_theta']).get_OccGrid()
+        self.renderer.render_occ_grid = self.occ_grid
+        self.renderer.update_occ_grid(self.occ_grid)
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
         self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
 
-        if self.render_flag:
-            self.renderer.front_traj = self.front_traj
-            self.renderer.horizon_traj = self.horizon_traj
-            self.renderer.render_offset_traj = self.offset_traj
+        # TODO: find a better way to config these params
+        # self.num_beam = self.f110_env.sim.agents[0].num_beams
+        # self.max_lidar_range = self.f110_env.sim.agents[0].scan_simulator.max_range
 
-        network_obs = self.get_network_obs()
-        return network_obs
+        self.num_beam = 1080
+        self.max_lidar_range = 30
+
+        self.max_pose = 1e3
+        self.min_pose = -self.max_pose
+
+        self.max_offset = 10
+        self.min_offset = -self.max_offset
+
+        # observation: lidar scans, reference front points, current x&y positions
+        # need to be changed to Box
+        self.single_observation_space = spaces.Dict(
+            {"scan": spaces.Box(low=0, high=self.max_lidar_range, shape=(self.num_beam,), dtype=np.float32),
+             "front": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(self.horizon,),
+                                 dtype=np.float32),
+             "pose": spaces.Box(low=self.min_pose, high=self.max_pose, shape=(2,), dtype=np.float32)})
+
+        # action: offsets in n horizons
+        self.single_action_space = spaces.Box(low=self.min_offset, high=self.max_offset, shape=(self.horizon,),
+                                              dtype=np.float32)
+
+        print("observation space shape", self.single_observation_space.shape)
+        print("action space shape", self.single_action_space.shape)
 
     def step(self, offset=None):
         self.offset = offset
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
+
         self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
@@ -113,6 +141,12 @@ class F110RLEnv(F110Env):
 
         # step function in race car, time step is k+1 now
         self.obs, step_time, self.done, info = super().step(np.array([[steering, speed]]))
+        self.occ_grid = OccGrid(self.obs['scans'], self.obs['poses_x'], self.obs['poses_y'],
+                                self.obs['poses_theta']).get_OccGrid()
+        # print(self.occ_grid)
+        self.renderer.update_occ_grid(self.occ_grid)
+        self.renderer.render_occ_grid = self.occ_grid
+
         self.lap_time += step_time
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
@@ -125,7 +159,7 @@ class F110RLEnv(F110Env):
         # TODO: design the reward function
         reward = 10 * step_time
         reward -= 1 * np.linalg.norm(offset, ord=2)
-        
+
         if super().current_obs['collisions'][0] == 1:
             reward -= 100
 
