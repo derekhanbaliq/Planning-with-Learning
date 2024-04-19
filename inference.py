@@ -20,6 +20,7 @@ from ppo_continuous import Agent
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
 from utils.waypoint_loader import WaypointLoader
+from utils.lidar_utils import get_lidar_data
 
 
 def main():
@@ -47,10 +48,11 @@ def main():
 
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
-    env.add_render_callback(renderer.render_front_traj) if rl_planner else None
+    # env.add_render_callback(renderer.render_front_traj) if rl_planner else None
     env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
     env.add_render_callback(renderer.render_offset_traj) if rl_planner else None
+    # env.add_render_callback(renderer.render_lidar_data) if rl_planner else None
     env.add_render_callback(fix_gui)
 
     lap_time = 0.0
@@ -69,6 +71,9 @@ def main():
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
+            # lidar data for further usage
+            lidar_data = get_lidar_data(obs['scans'], obs['poses_x'], obs['poses_y'], obs['poses_theta'])
+
             # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
             front_traj = get_front_traj(obs, waypoints, predict_time=rl_env.predict_time)  # [i, x, y, v]
             horizon_traj = get_interpolated_traj_with_horizon(front_traj, rl_env.horizon)  # [x, y, v]
@@ -88,7 +93,8 @@ def main():
             lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
 
-            renderer.front_traj = front_traj
+            # renderer.lidar_data = lidar_data
+            # renderer.front_traj = front_traj
             renderer.horizon_traj = horizon_traj
             renderer.offset_traj = offset_traj
             renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
