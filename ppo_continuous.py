@@ -79,6 +79,8 @@ def parse_args():
                         help="the target KL divergence threshold")
     parser.add_argument("--time-horizon", "--t", type=int, default=1,
                         help="time horizon for predicting trajectory")
+    parser.add_argument("--num-obstacles", "--t", type=int, default=0,
+                        help="number of randomly generated obstacles")
 
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
@@ -94,9 +96,9 @@ def parse_args():
     return args
 
 
-def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name):
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name, num_obstacles):
     def thunk():
-        env = F110RLEnv(render=render_flag, map_name=map_name)
+        env = F110RLEnv(render=render_flag, map_name=map_name, num_obstacles=num_obstacles)
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
@@ -187,7 +189,7 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name) for i in
+        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name, args.num_obstacles) for i in
          range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"

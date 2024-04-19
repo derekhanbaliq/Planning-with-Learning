@@ -41,10 +41,18 @@ def main():
         controller = LQRSteeringController(waypoints)
     elif method == 'lqr_steering_speed':
         controller = LQRSteeringSpeedController(waypoints)
+        
+    # generate random obstacles
+    num_obstacles = 2
+    # length_obs = 0.58 # 0.32
+    # width_obs  = 0.31 # 0.22
+    obt_index = np.random.uniform(0, waypoints.x.shape[0], size=(num_obstacles,)).astype(int)        
+    obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index]]).transpose().reshape((-1, 2))
 
     # create & init env
     env = F110Env(map=map_path + '/' + map_name + '_map',
-                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1)
+                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1,
+                  obt_poses = obt_pose)
 
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
@@ -52,7 +60,7 @@ def main():
     env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
     env.add_render_callback(renderer.render_offset_traj) if rl_planner else None
-    # env.add_render_callback(renderer.render_lidar_data) if rl_planner else None
+    env.add_render_callback(renderer.render_lidar_data) if rl_planner else None
     env.add_render_callback(fix_gui)
 
     lap_time = 0.0
@@ -65,7 +73,7 @@ def main():
     
     obs, _, done, _ = env.reset(init_pos)
 
-    rl_env = F110RLEnv(render=False, map_name=map_name)
+    rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose)
     model = Agent(rl_env)
     model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
 
@@ -93,7 +101,7 @@ def main():
             lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
 
-            # renderer.lidar_data = lidar_data
+            renderer.lidar_data = lidar_data
             # renderer.front_traj = front_traj
             renderer.horizon_traj = horizon_traj
             renderer.offset_traj = offset_traj

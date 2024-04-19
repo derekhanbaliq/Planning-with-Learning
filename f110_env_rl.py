@@ -22,6 +22,7 @@ class F110RLEnv(F110Env):
         # load keyword arguments
         self.render_flag = kwargs['render']
         map_name = kwargs['map_name']  # levine_2nd, skir
+        self.num_obstacles = kwargs['num_obstacles']
 
         # load map, waypoints, controller, and renderer
         map_path = os.path.abspath(os.path.join('maps', map_name))
@@ -37,10 +38,18 @@ class F110RLEnv(F110Env):
             super().add_render_callback(self.renderer.render_offset_traj)
             super().add_render_callback(fix_gui)
 
+        if 'obt_poses' in kwargs:
+            # get the obstacle poses input
+            obt_pose = kwargs['obt_poses']
+        else:
+            # randomly generate obstacles
+            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)        
+            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index]]).transpose().reshape((-1, 2))
+
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
                                         map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png',
-                                        seed=0, num_agents=1)
+                                        seed=0, num_agents=1, obt_poses = obt_pose)
 
         # init params
         self.horizon = int(10)
@@ -90,7 +99,7 @@ class F110RLEnv(F110Env):
         
         # np.random.seed(0)
         init_index = np.random.randint(0, self.waypoints.x.shape[0])        
-        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index], 0.0]).reshape((1, -1))
+        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
 
         
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)

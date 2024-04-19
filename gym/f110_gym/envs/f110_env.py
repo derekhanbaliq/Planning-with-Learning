@@ -188,7 +188,10 @@ class F110Env(gym.Env):
         # initiate stuff
         self.sim = Simulator(self.params, self.num_agents, self.seed, time_step=self.timestep,
                              integrator=self.integrator)
-        self.sim.set_map(self.map_path, self.map_ext)
+        
+        # set up laser map, add obstacles
+        self.obt_poses = kwargs['obt_poses']
+        self.sim.set_map(self.map_path, self.map_ext, self.obt_poses)
 
         # stateful observations for rendering
         self.render_obs = None
@@ -403,7 +406,7 @@ class F110Env(gym.Env):
             # first call, initialize everything
             from f110_gym.envs.rendering import EnvRenderer
             F110Env.renderer = EnvRenderer(WINDOW_W, WINDOW_H)
-            F110Env.renderer.update_map(self.map_name, self.map_ext)
+            F110Env.renderer.update_map(self.map_name, self.map_ext, self.obt_poses)
 
         F110Env.renderer.update_obs(self.render_obs)
 

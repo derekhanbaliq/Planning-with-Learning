@@ -380,7 +380,7 @@ class ScanSimulator2D(object):
         self.sines = np.sin(theta_arr)
         self.cosines = np.cos(theta_arr)
     
-    def set_map(self, map_path, map_ext):
+    def set_map(self, map_path, map_ext, obst_pose=[]):
         """
         Set the bitmap of the scan simulator by path
 
@@ -406,9 +406,6 @@ class ScanSimulator2D(object):
         self.map_img[self.map_img <= 128.] = 0.
         self.map_img[self.map_img > 128.] = 255.
         
-        # TODO: need also add obstacle here for rendering
-        # self.map_img[:, 400] = 0
-
         self.map_height = self.map_img.shape[0]
         self.map_width = self.map_img.shape[1]
 
@@ -426,6 +423,25 @@ class ScanSimulator2D(object):
         self.orig_y = self.origin[1]
         self.orig_s = np.sin(self.origin[2])
         self.orig_c = np.cos(self.origin[2])
+        
+
+        # add obstacles
+        half_width = np.round(0.22 / 2 / self.map_resolution).astype(int)
+        half_length = np.round(0.32 / 2 / self.map_resolution).astype(int)
+        
+        for i in range(obst_pose.shape[0]):
+            # 0.2925621; -0.5641431
+            # origin_x_index = np.ceil((0.2925621 - origin_x) / map_resolution).astype(int)
+            # origin_y_index = np.ceil((-0.5641431 - origin_y) / map_resolution).astype(int)
+            origin_x_index = np.ceil((obst_pose[i,0] - self.orig_x) / self.map_resolution).astype(int)
+            origin_y_index = np.ceil((obst_pose[i,1] - self.orig_y) / self.map_resolution).astype(int)
+
+            self.map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
+        
+        # visulization for debugging 
+        # import matplotlib.pyplot as plt
+        # plt.imshow(self.map_img, cmap='viridis', interpolation='nearest', origin='lower')
+        # plt.show()
 
         # get the distance transform
         self.dt = get_dt(self.map_img, self.map_resolution)
