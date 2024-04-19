@@ -79,7 +79,7 @@ def parse_args():
                         help="the target KL divergence threshold")
     parser.add_argument("--time-horizon", "--t", type=int, default=1,
                         help="time horizon for predicting trajectory")
-    parser.add_argument("--num-obstacles", "--t", type=int, default=0,
+    parser.add_argument("--num-obstacles", type=int, default=1,
                         help="number of randomly generated obstacles")
 
     # parameters for rl planner
