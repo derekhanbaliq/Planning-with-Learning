@@ -1,5 +1,5 @@
 """
-    the occupancy grid & helper functions for the perception module
+    helper functions for the lidar scan
     Author: Derek Zhou, Biao Wang, Tian Tan
 """
 

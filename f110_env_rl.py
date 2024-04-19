@@ -21,9 +21,9 @@ class F110RLEnv(F110Env):
     def __init__(self, **kwargs):
         # load keyword arguments
         self.render_flag = kwargs['render']
+        map_name = kwargs['map_name']  # levine_2nd, skir
 
         # load map, waypoints, controller, and renderer
-        map_name = 'levine_2nd'  # levine_2nd, skir
         map_path = os.path.abspath(os.path.join('maps', map_name))
         csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)
         self.waypoints = WaypointLoader(map_name, csv_data)

@@ -61,7 +61,7 @@ class Renderer:
 
     def render_horizon_traj(self, e):
         """
-        update horizon point
+        update horizon points
         """
 
         def create_triangle(x, y, size):
