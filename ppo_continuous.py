@@ -214,6 +214,7 @@ if __name__ == "__main__":
     num_updates = args.total_timesteps // args.batch_size
     video_filenames = set()
     high_reward = float('-inf')
+    save_count = 0
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -369,9 +370,13 @@ if __name__ == "__main__":
                 if filename not in video_filenames and filename.endswith(".mp4"):
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
-
+                    
+        if (update % (int)(num_updates/5)) == 0:
+            torch.save(agent.state_dict(), Path(f'skir_with_obs_'+str(save_count)+'.pkl'))
+            print("save model")
+            save_count += 1
     # TODO: refine saving & naming
-    model_path = Path(f'test.pkl')
+    model_path = Path(f'skir_with_obs_2.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
