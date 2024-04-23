@@ -14,7 +14,7 @@ from f110_gym.envs.f110_env import F110Env
 from gym import spaces
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj, \
-                             global_to_local, local_to_global
+    global_to_local, local_to_global
 from utils.waypoint_loader import WaypointLoader
 from utils.lidar_utils import downsample_lidar_scan
 
@@ -46,13 +46,13 @@ class F110RLEnv(F110Env):
             obt_pose = kwargs['obt_poses']
         else:
             # randomly generate obstacles
-            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)        
+            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)
             obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index]]).transpose().reshape((-1, 2))
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
                                         map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png',
-                                        seed=0, num_agents=1, obt_poses = obt_pose)
+                                        seed=0, num_agents=1, obt_poses=obt_pose)
 
         # init params
         self.horizon = int(10)
@@ -98,8 +98,9 @@ class F110RLEnv(F110Env):
     def reset(self, seed=1):
         # initialization
         # np.random.seed(0)
-        init_index = np.random.randint(0, self.waypoints.x.shape[0])        
-        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
+        init_index = np.random.randint(0, self.waypoints.x.shape[0])
+        init_pos = np.array(
+            [self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
@@ -143,7 +144,7 @@ class F110RLEnv(F110Env):
         # TODO: design the reward function
         reward = 100 * step_time  # 0.01
         reward -= 1 * np.linalg.norm(offset, ord=2)
-        
+
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000
 

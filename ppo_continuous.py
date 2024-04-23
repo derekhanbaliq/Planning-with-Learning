@@ -375,12 +375,12 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_simpler_input_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_simpler_input_4obs_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
     # TODO: refine saving & naming
-    model_path = Path(f'skir_simpler_input.pkl')
+    model_path = Path(f'skir_simpler_input_4obs.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()

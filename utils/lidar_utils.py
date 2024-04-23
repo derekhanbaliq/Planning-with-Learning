@@ -15,15 +15,14 @@ def downsample_lidar_scan(data, observation_shape):
 
 
 def get_lidar_data(scans, poses_x, poses_y, poses_theta):
-    lidar_scan = np.array(scans)
     poses_x = poses_x
     poses_y = poses_y
     poses_theta = poses_theta
-    angles = np.linspace(-135, 135, 1080) * (np.pi / 180)
+    angles = np.linspace(-135, 135, num=scans.shape[0]) * (np.pi / 180)
 
     # Local coordinates in the LiDAR frame of reference
-    local_x = lidar_scan * np.cos(angles)
-    local_y = lidar_scan * np.sin(angles)
+    local_x = scans * np.cos(angles)
+    local_y = scans * np.sin(angles)
 
     # Rotation and translation to global coordinates
     cos_theta = np.cos(poses_theta)
