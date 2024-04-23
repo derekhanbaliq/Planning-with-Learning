@@ -13,8 +13,10 @@ from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from f110_gym.envs.f110_env import F110Env
 from gym import spaces
 from utils.render import Renderer, fix_gui
-from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj
+from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj, \
+    global_to_local, local_to_global
 from utils.waypoint_loader import WaypointLoader
+from utils.lidar_utils import downsample_lidar_scan
 
 
 class F110RLEnv(F110Env):
@@ -23,6 +25,7 @@ class F110RLEnv(F110Env):
         self.render_flag = kwargs['render']
         map_name = kwargs['map_name']  # levine_2nd, skir
         self.num_obstacles = kwargs['num_obstacles']
+        self.num_lidar_scan = kwargs['num_lidar_scan']
 
         # load map, waypoints, controller, and renderer
         map_path = os.path.abspath(os.path.join('maps', map_name))
@@ -43,13 +46,13 @@ class F110RLEnv(F110Env):
             obt_pose = kwargs['obt_poses']
         else:
             # randomly generate obstacles
-            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)        
+            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)
             obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index]]).transpose().reshape((-1, 2))
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
                                         map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png',
-                                        seed=0, num_agents=1, obt_poses = obt_pose)
+                                        seed=0, num_agents=1, obt_poses=obt_pose)
 
         # init params
         self.horizon = int(10)
@@ -58,15 +61,14 @@ class F110RLEnv(F110Env):
         self.offset = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
         # set up the bounding boxes
-        self.num_beam = 1080
         self.max_lidar_range = 30
         self.max_pose = 1e3
         self.min_pose = -self.max_pose
         self.max_offset = 1
         self.min_offset = -self.max_offset
 
-        low_lidar = 0 * np.ones((self.num_beam,), dtype=np.float32)
-        high_lidar = self.max_lidar_range * np.ones((self.num_beam,), dtype=np.float32)
+        low_lidar = 0 * np.ones((self.num_lidar_scan,), dtype=np.float32)
+        high_lidar = self.max_lidar_range * np.ones((self.num_lidar_scan,), dtype=np.float32)
         low_traj = self.min_pose * np.ones((self.horizon * 2,), dtype=np.float32)
         high_traj = self.max_pose * np.ones((self.horizon * 2,), dtype=np.float32)
         low_pose = self.min_pose * np.ones((2,), dtype=np.float32)
@@ -86,8 +88,8 @@ class F110RLEnv(F110Env):
         # print("action space shape", self.single_action_space.shape)
 
     def get_network_obs(self):
-        lidar_obs = self.obs['scans'][0].flatten()
-        traj_obs = self.horizon_traj[:, :2].flatten()
+        lidar_obs = downsample_lidar_scan(self.obs['scans'][0].flatten(), self.num_lidar_scan)
+        traj_obs = self.local_horizon_traj[:, :2].flatten()
         pose_obs = np.array([self.obs['poses_x'][0], self.obs['poses_y'][0]]).reshape((-1,))
         network_obs = np.hstack((lidar_obs, traj_obs, pose_obs))
 
@@ -95,25 +97,25 @@ class F110RLEnv(F110Env):
 
     def reset(self, seed=1):
         # initialization
-        init_pos = np.array([0.0, 0.0, 0.0]).reshape((1, -1))  # 1 x 3
-        
         # np.random.seed(0)
-        init_index = np.random.randint(0, self.waypoints.x.shape[0])        
-        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
+        init_index = np.random.randint(0, self.waypoints.x.shape[0])
+        init_pos = np.array(
+            [self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
 
-        
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
 
         # get init horizon traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
-        self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
+        self.local_horizon_traj = global_to_local(self.obs, self.horizon_traj)
+        self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
+        self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
 
         if self.render_flag:
             self.renderer.front_traj = self.front_traj
             self.renderer.horizon_traj = self.horizon_traj
-            self.renderer.render_offset_traj = self.offset_traj
+            self.renderer.offset_traj = self.offset_traj
 
         network_obs = self.get_network_obs()
         return network_obs
@@ -121,7 +123,8 @@ class F110RLEnv(F110Env):
     def step(self, offset=None):
         self.offset = offset
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
-        self.offset_traj = get_offset_traj(self.horizon_traj, self.offset)
+        self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
+        self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
@@ -133,14 +136,15 @@ class F110RLEnv(F110Env):
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
         self.front_traj = get_front_traj(self.obs, self.waypoints, predict_time=self.predict_time)  # [i, x, y, v]
         self.horizon_traj = get_interpolated_traj_with_horizon(self.front_traj, self.horizon)  # [x, y, v]
+        self.local_horizon_traj = global_to_local(self.obs, self.horizon_traj)
 
         # get agent observation [lidar, front traj, pose]
         network_obs = self.get_network_obs()
 
         # TODO: design the reward function
-        reward = 100 * step_time
+        reward = 100 * step_time  # 0.01
         reward -= 1 * np.linalg.norm(offset, ord=2)
-        
+
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000
 

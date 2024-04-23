@@ -77,16 +77,18 @@ def parse_args():
                         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
                         help="the target KL divergence threshold")
-    parser.add_argument("--time-horizon", "--t", type=int, default=1,
-                        help="time horizon for predicting trajectory")
-    parser.add_argument("--num-obstacles", type=int, default=1,
-                        help="number of randomly generated obstacles")
 
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="levine_2nd",
+    parser.add_argument("--map-name", type=str, default="skir",
                         help="the map of the environment")
+    parser.add_argument("--time-horizon", "--t", type=int, default=1,
+                        help="time horizon for predicting trajectory")
+    parser.add_argument("--num-obstacles", type=int, default=1,
+                        help="number of randomly generated obstacles")
+    parser.add_argument("--num-lidar-scan", type=int, default=108,
+                        help="number of randomly generated obstacles")
 
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
@@ -96,9 +98,9 @@ def parse_args():
     return args
 
 
-def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name, num_obstacles):
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name, num_obstacles, num_lidar_scan):
     def thunk():
-        env = F110RLEnv(render=render_flag, map_name=map_name, num_obstacles=num_obstacles)
+        env = F110RLEnv(render=render_flag, map_name=map_name, num_obstacles=num_obstacles, num_lidar_scan=num_lidar_scan)
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
@@ -189,8 +191,8 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name, args.num_obstacles) for i in
-         range(args.num_envs)]
+        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name,
+                  args.num_obstacles, args.num_lidar_scan) for i in range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
@@ -354,6 +356,7 @@ if __name__ == "__main__":
         #         }, f"runs/{run_name}/{update}_model.pt")
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
+        # https://docs.cleanrl.dev/rl-algorithms/ppo/#explanation-of-the-logged-metrics
         writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
         writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
         writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
@@ -371,12 +374,13 @@ if __name__ == "__main__":
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
                     
-        if (update % (int)(num_updates/5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_with_obs_'+str(save_count)+'.pkl'))
+        if (update % int(num_updates / 5)) == 0:
+            torch.save(agent.state_dict(), Path(f'skir_simpler_input_4obs_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
+
     # TODO: refine saving & naming
-    model_path = Path(f'skir_with_obs_2.pkl')
+    model_path = Path(f'skir_simpler_input_4obs.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
