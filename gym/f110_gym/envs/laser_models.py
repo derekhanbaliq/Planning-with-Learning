@@ -447,8 +447,8 @@ class ScanSimulator2D(object):
         self.dt = get_dt(self.map_img, self.map_resolution)
         
         
-        print("the shape of origin map img:", self.map_img.shape)
-        print("the shape of dt matrix:", self.dt.shape)
+        # print("the shape of origin map img:", self.map_img.shape)
+        # print("the shape of dt matrix:", self.dt.shape)
 
         return True
 

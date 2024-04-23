@@ -29,6 +29,7 @@ def main():
 
     # load map & waypoints
     map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
