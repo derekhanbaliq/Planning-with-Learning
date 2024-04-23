@@ -138,11 +138,12 @@ class F110RLEnv(F110Env):
         network_obs = self.get_network_obs()
 
         # TODO: design the reward function
-        reward = 100 * step_time
-        reward -= 1 * np.linalg.norm(offset, ord=2)
+        reward = 50 * step_time
+        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        reward -= 0.1 * np.linalg.norm((offset[1:]-offset[:-1]), ord=2)
         
         if super().current_obs['collisions'][0] == 1:
-            reward -= 1000
+            reward -= 20000
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj

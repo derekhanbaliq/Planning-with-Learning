@@ -28,7 +28,7 @@ def main():
     rl_planner = True  # if use RL planner, then enable
 
     # load map & waypoints
-    map_name = 'levine_2nd'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -75,7 +75,9 @@ def main():
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
+    # model.load_state_dict(torch.load('offset_collision_longevity.pkl'))
+    # model.load_state_dict(torch.load('skir_with_obs_4.pkl'))
+    model.load_state_dict(torch.load('skir_fine_tune2_2.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
