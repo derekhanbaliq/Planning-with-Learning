@@ -380,7 +380,7 @@ class ScanSimulator2D(object):
         self.sines = np.sin(theta_arr)
         self.cosines = np.cos(theta_arr)
     
-    def set_map(self, map_path, map_ext):
+    def set_map(self, map_path, map_ext, obst_pose=[]):
         """
         Set the bitmap of the scan simulator by path
 
@@ -399,10 +399,13 @@ class ScanSimulator2D(object):
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         self.map_img = self.map_img.astype(np.float64)
 
+
+        # TODO: we can add obstacles here
+
         # grayscale -> binary
         self.map_img[self.map_img <= 128.] = 0.
         self.map_img[self.map_img > 128.] = 255.
-
+        
         self.map_height = self.map_img.shape[0]
         self.map_width = self.map_img.shape[1]
 
@@ -420,9 +423,32 @@ class ScanSimulator2D(object):
         self.orig_y = self.origin[1]
         self.orig_s = np.sin(self.origin[2])
         self.orig_c = np.cos(self.origin[2])
+        
+
+        # add obstacles
+        half_width = np.round(0.22 / 2 / self.map_resolution).astype(int)
+        half_length = np.round(0.32 / 2 / self.map_resolution).astype(int)
+        
+        for i in range(obst_pose.shape[0]):
+            # 0.2925621; -0.5641431
+            # origin_x_index = np.ceil((0.2925621 - origin_x) / map_resolution).astype(int)
+            # origin_y_index = np.ceil((-0.5641431 - origin_y) / map_resolution).astype(int)
+            origin_x_index = np.ceil((obst_pose[i,0] - self.orig_x) / self.map_resolution).astype(int)
+            origin_y_index = np.ceil((obst_pose[i,1] - self.orig_y) / self.map_resolution).astype(int)
+
+            self.map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
+        
+        # visulization for debugging 
+        # import matplotlib.pyplot as plt
+        # plt.imshow(self.map_img, cmap='viridis', interpolation='nearest', origin='lower')
+        # plt.show()
 
         # get the distance transform
         self.dt = get_dt(self.map_img, self.map_resolution)
+        
+        
+        print("the shape of origin map img:", self.map_img.shape)
+        print("the shape of dt matrix:", self.dt.shape)
 
         return True
 

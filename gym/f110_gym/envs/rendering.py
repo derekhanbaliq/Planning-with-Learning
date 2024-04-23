@@ -108,7 +108,7 @@ class EnvRenderer(pyglet.window.Window):
 
         self.fps_display = pyglet.window.FPSDisplay(self)
 
-    def update_map(self, map_path, map_ext):
+    def update_map(self, map_path, map_ext, obst_pose=None):
         """
         Update the map being drawn by the renderer. Converts image to a list of 3D points representing each obstacle pixel in the map.
 
@@ -135,6 +135,21 @@ class EnvRenderer(pyglet.window.Window):
         map_img = np.array(Image.open(map_path + map_ext).transpose(Image.FLIP_TOP_BOTTOM)).astype(np.float64)
         map_height = map_img.shape[0]
         map_width = map_img.shape[1]
+        
+        
+        # add obstacles
+        half_width = np.round(0.22 / 2 / map_resolution).astype(int)
+        half_length = np.round(0.32 / 2 / map_resolution).astype(int)
+        
+        for i in range(obst_pose.shape[0]):
+            # 0.2925621; -0.5641431
+            # origin_x_index = np.ceil((0.2925621 - origin_x) / map_resolution).astype(int)
+            # origin_y_index = np.ceil((-0.5641431 - origin_y) / map_resolution).astype(int)
+            origin_x_index = np.ceil((obst_pose[i,0] - origin_x) / map_resolution).astype(int)
+            origin_y_index = np.ceil((obst_pose[i,1] - origin_y) / map_resolution).astype(int)
+
+            map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
+
 
         # convert map pixels to coordinates
         range_x = np.arange(map_width)
