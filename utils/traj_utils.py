@@ -105,4 +105,36 @@ def densify_offset_traj(offset_traj, intep_num=80):
     return profile
 
 
+def global_to_local(obs, global_data):
+    x, y, theta = obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0]
+    H = np.array([[np.cos(theta), -np.sin(theta), 0, x],
+                  [np.sin(theta), np.cos(theta), 0, y],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])  # vehicle frame to world frame
+
+    global_coord = np.hstack((global_data[:, :2], np.tile([0, 1], (global_data.shape[0], 1))))
+    local_coord = np.transpose(np.linalg.inv(H) @ global_coord.T)
+    # print(local_coord)
+
+    local_data = np.hstack((local_coord[:, :2], global_data[:, 2].reshape(global_data.shape[0], 1)))  # stack v
+    # print(local_data)
+
+    return local_data
+
+
+def local_to_global(obs, local_data):
+    x, y, theta = obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0]
+    H = np.array([[np.cos(theta), -np.sin(theta), 0, x],
+                  [np.sin(theta), np.cos(theta), 0, y],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])  # vehicle frame to world frame
+
+    local_coord = np.hstack((local_data[:, :2], np.tile([0, 1], (local_data.shape[0], 1))))
+    global_coord = np.transpose(H @ local_coord.T)
+    # print(local_coord)
+
+    global_data = np.hstack((global_coord[:, :2], local_data[:, 2].reshape(local_data.shape[0], 1)))  # stack v
+    # print(global_data)
+
+    return global_data
 
