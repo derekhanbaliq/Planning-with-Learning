@@ -39,6 +39,9 @@ import yaml
 # helpers
 from f110_gym.envs.collision_models import get_vertices
 
+from f110_gym.envs.rotation_utils import RotationUtil
+
+
 # zooming constants
 ZOOM_IN_FACTOR = 1.2
 ZOOM_OUT_FACTOR = 1/ZOOM_IN_FACTOR
@@ -136,6 +139,7 @@ class EnvRenderer(pyglet.window.Window):
         map_height = map_img.shape[0]
         map_width = map_img.shape[1]
         
+        m_rotation_util = RotationUtil(map_resolution)
         
         # add obstacles
         half_width = np.round(0.22 / 2 / map_resolution).astype(int)
@@ -147,8 +151,11 @@ class EnvRenderer(pyglet.window.Window):
             # origin_y_index = np.ceil((-0.5641431 - origin_y) / map_resolution).astype(int)
             origin_x_index = np.ceil((obst_pose[i,0] - origin_x) / map_resolution).astype(int)
             origin_y_index = np.ceil((obst_pose[i,1] - origin_y) / map_resolution).astype(int)
+            theta = obst_pose[i,2]
 
-            map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
+            inside_points, points, sorted_vertices = m_rotation_util.find_points_inside(origin_x_index, origin_y_index, theta)
+            map_img[inside_points[:,0], inside_points[:,1]] = 0
+            # map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
 
 
         # convert map pixels to coordinates

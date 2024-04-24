@@ -44,9 +44,12 @@ def main():
         controller = LQRSteeringSpeedController(waypoints)
 
     # generate random obstacles
-    num_obstacles = 0  # length_obs = 0.58 # 0.32, width_obs  = 0.31 # 0.22
-    obt_index = np.random.uniform(0, waypoints.x.shape[0], size=(num_obstacles,)).astype(int)
-    obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index]]).transpose().reshape((-1, 2))
+    num_obstacles = 2  # length_obs = 0.58 # 0.32, width_obs  = 0.31 # 0.22
+    obt_index = np.random.uniform(1, waypoints.x.shape[0]-1, size=(num_obstacles,)).astype(int)
+    
+    # obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index], waypoints.θ[obt_index]]).transpose().reshape((-1, 3))
+    thetas = np.arctan2(waypoints.x[obt_index+1]-waypoints.x[obt_index-1], waypoints.y[obt_index+1]-waypoints.y[obt_index-1])
+    obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index], thetas]).transpose().reshape((-1, 3))
 
     # create & init env
     env = F110Env(map=map_path + '/' + map_name + '_map',

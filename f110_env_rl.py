@@ -46,8 +46,10 @@ class F110RLEnv(F110Env):
             obt_pose = kwargs['obt_poses']
         else:
             # randomly generate obstacles
-            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)
-            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index]]).transpose().reshape((-1, 2))
+            obt_index = np.random.uniform(1, self.waypoints.x.shape[0]-1, size=(self.num_obstacles,)).astype(int)
+            # obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index], self.waypoints.θ[obt_index]]).transpose().reshape((-1, 3))
+            thetas = np.arctan2(self.waypoints.x[obt_index+1]-self.waypoints.x[obt_index-1], self.waypoints.y[obt_index+1]-self.waypoints.y[obt_index-1])
+            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index], thetas]).transpose().reshape((-1, 3))
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',

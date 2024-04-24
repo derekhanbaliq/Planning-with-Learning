@@ -34,6 +34,9 @@ from PIL import Image
 import os
 import yaml
 
+import matplotlib.path as mpath
+from f110_gym.envs.rotation_utils import RotationUtil
+
 import unittest
 import timeit
 
@@ -424,10 +427,17 @@ class ScanSimulator2D(object):
         self.orig_s = np.sin(self.origin[2])
         self.orig_c = np.cos(self.origin[2])
         
+        m_rotation_util = RotationUtil(self.map_resolution)
 
         # add obstacles
-        half_width = np.round(0.22 / 2 / self.map_resolution).astype(int)
-        half_length = np.round(0.32 / 2 / self.map_resolution).astype(int)
+        width_car = 0.22
+        length_car = 0.32
+        diag_car = np.sqrt(width_car**2 + length_car**2)
+        
+        half_width = np.round(width_car / 2 / self.map_resolution).astype(int)
+        half_length = np.round(length_car / 2 / self.map_resolution).astype(int)
+        
+        # import matplotlib.pyplot as plt
         
         for i in range(obst_pose.shape[0]):
             # 0.2925621; -0.5641431
@@ -435,8 +445,22 @@ class ScanSimulator2D(object):
             # origin_y_index = np.ceil((-0.5641431 - origin_y) / map_resolution).astype(int)
             origin_x_index = np.ceil((obst_pose[i,0] - self.orig_x) / self.map_resolution).astype(int)
             origin_y_index = np.ceil((obst_pose[i,1] - self.orig_y) / self.map_resolution).astype(int)
-
-            self.map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
+            theta = obst_pose[i,2]
+            
+            inside_points, points, sorted_vertices = m_rotation_util.find_points_inside(origin_x_index, origin_y_index, theta)
+            
+            # visulization for debugging 
+            # temp_img = self.map_img.copy()
+            # temp_img[points[:,0], points[:,1]] = 0
+            # temp_img[inside_points[:,0], inside_points[:,1]] = 127
+            # temp_img[sorted_vertices[:,0], sorted_vertices[:,1]] = 255
+            
+            # plt.figure()
+            # plt.imshow(temp_img, cmap='viridis', interpolation='nearest', origin='lower')
+            # plt.show()
+            
+            self.map_img[inside_points[:,0], inside_points[:,1]] = 0
+            # self.map_img[origin_y_index-half_width:origin_y_index+half_width, origin_x_index-half_length:origin_x_index+half_length] = 0
         
         # visulization for debugging 
         # import matplotlib.pyplot as plt
