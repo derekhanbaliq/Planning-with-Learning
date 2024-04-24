@@ -51,7 +51,7 @@ class F110RLEnv(F110Env):
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
-                                        map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png',
+                                        map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' or map_name == 'skir_blocked' else '.png',
                                         seed=0, num_agents=1, obt_poses=obt_pose)
 
         # init params
@@ -103,6 +103,7 @@ class F110RLEnv(F110Env):
             [self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
+        init_pos = np.array([0.0, 0.0, 0.0])
         self.lap_time = 0.0
 
         # get init horizon traj
@@ -130,7 +131,7 @@ class F110RLEnv(F110Env):
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
 
         # step function in race car, time step is k+1 now
-        self.obs, step_time, self.done, info = super().step(np.array([[steering, speed]]))
+        self.obs, step_time, self.done, info = super().step(np.array([[steering, 2.0]]))
         self.lap_time += step_time
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
@@ -143,7 +144,7 @@ class F110RLEnv(F110Env):
 
         # TODO: design the reward function
         reward = 100 * step_time  # 0.01
-        reward -= 1 * np.linalg.norm(offset, ord=2)
+        reward -= 0.1 * np.linalg.norm(offset, ord=1)
 
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000

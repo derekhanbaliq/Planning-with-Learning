@@ -28,7 +28,7 @@ def main():
     rl_planner = True  # if use RL planner, then enable
 
     # load map & waypoints
-    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir_blocked'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -49,8 +49,8 @@ def main():
 
     # create & init env
     env = F110Env(map=map_path + '/' + map_name + '_map',
-                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1,
-                  obt_poses=obt_pose)
+                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' or map_name == 'skir_blocked' else '.png',
+                  num_agents=1, obt_poses=obt_pose)
 
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
@@ -66,13 +66,14 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
+    init_pos = np.array([[0.0, 0.0, 0.0]])
 
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('skir_simpler_input_100k_no_obs.pkl'))
+    model.load_state_dict(torch.load('skir_blocked.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -100,6 +101,7 @@ def main():
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
             lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
+            speed = 2.0
 
             renderer.lidar_data = lidar_data
             # renderer.front_traj = front_traj

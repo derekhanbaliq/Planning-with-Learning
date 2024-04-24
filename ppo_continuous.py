@@ -81,7 +81,7 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir",
+    parser.add_argument("--map-name", type=str, default="skir_blocked",
                         help="the map of the environment")
     parser.add_argument("--time-horizon", "--t", type=int, default=1,
                         help="time horizon for predicting trajectory")
@@ -375,12 +375,12 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_simpler_input_4obs_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_blocked_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
     # TODO: refine saving & naming
-    model_path = Path(f'skir_simpler_input_4obs.pkl')
+    model_path = Path(f'skir_blocked.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
