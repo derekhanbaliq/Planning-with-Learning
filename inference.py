@@ -14,25 +14,22 @@ from controllers.lqr_steering import LQRSteeringController
 from controllers.lqr_steering_speed import LQRSteeringSpeedController
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
 from f110_env_rl import F110RLEnv
+from f110_gym.envs.base_classes import RaceCar
 from f110_gym.envs.f110_env import F110Env
 from ppo_continuous import Agent
+from utils.lidar_utils import downsample_lidar_scan, get_lidar_data
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj, \
-                             global_to_local, local_to_global, bresenham_line_index, bresenham_line_point
+    global_to_local, local_to_global, bresenham_line_index, bresenham_line_point
 from utils.waypoint_loader import WaypointLoader
-from utils.lidar_utils import downsample_lidar_scan, get_lidar_data
-
-
-from f110_gym.envs.base_classes import RaceCar
 
 
 def main():
     method = 'pure_pursuit'  # pure_pursuit, lqr_steering, lqr_steering_speed
-    rl_planner = True  # if use RL planner, then enable
+    rl_planner = True  # enable if you use RL planner
 
     # load map & waypoints
-    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
-    map_name = 'skir'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir_blocked'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -48,16 +45,15 @@ def main():
 
     # generate random obstacles
     num_obstacles = 0  # length_obs = 0.58 # 0.32, width_obs  = 0.31 # 0.22
-    obt_index = np.random.uniform(1, waypoints.x.shape[0]-1, size=(num_obstacles,)).astype(int)
-    
-    # obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index], waypoints.θ[obt_index]]).transpose().reshape((-1, 3))
-    thetas = np.arctan2(waypoints.x[obt_index+1]-waypoints.x[obt_index-1], waypoints.y[obt_index+1]-waypoints.y[obt_index-1])
+    obt_index = np.random.uniform(1, waypoints.x.shape[0] - 1, size=(num_obstacles,)).astype(int)
+    thetas = np.arctan2(waypoints.x[obt_index + 1] - waypoints.x[obt_index - 1],
+                        waypoints.y[obt_index + 1] - waypoints.y[obt_index - 1])
     obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index], thetas]).transpose().reshape((-1, 3))
 
     # create & init env
     env = F110Env(map=map_path + '/' + map_name + '_map',
-                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' else '.png', num_agents=1,
-                  obt_poses=obt_pose)
+                  map_ext='.pgm' if map_name == 'levine_2nd' or map_name == 'skir' or map_name == 'skir_blocked' else '.png',
+                  num_agents=1, obt_poses=obt_pose)
 
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
@@ -73,13 +69,14 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
+    init_pos = np.array([[0.0, 0.0, 0.0]])
 
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
-                       num_lidar_scan=1080)
+                       num_lidar_scan=108)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('skir_with_obs_0.pkl'))
+    model.load_state_dict(torch.load(f'models/skir_blocked_256_pass_2_obs.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -107,29 +104,26 @@ def main():
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
             lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
-            
-            
-            offset_x_index = np.ceil((offset_traj[:,0] + 12) / 0.05).astype(int)
-            offset_y_index = np.ceil((offset_traj[:,1] + 10.7) / 0.05).astype(int)
+            speed = 2.0
+
+            offset_x_index = np.ceil((offset_traj[:, 0] + 12) / 0.05).astype(int)
+            offset_y_index = np.ceil((offset_traj[:, 1] + 10.7) / 0.05).astype(int)
             offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
-            
             max_rows = RaceCar.scan_simulator.map_img.shape[0]
             max_cols = RaceCar.scan_simulator.map_img.shape[1]
-            
             all_indices = []
-            for i in range(offset_traj_indices.shape[0]-1):
-                line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i+1, :])
+            for i in range(offset_traj_indices.shape[0] - 1):
+                line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i + 1, :])
                 all_indices.append(line_indices)
             all_indices = np.concatenate(all_indices).reshape(-1, 2)
-            
-            filtered_traj_indices = all_indices[(all_indices[:,1]<max_rows) & (all_indices[:,0]<max_cols)]
+            filtered_traj_indices = all_indices[(all_indices[:, 1] < max_rows) & (all_indices[:, 0] < max_cols)]
             print("offset traj index:", filtered_traj_indices.shape)
             # print(RaceCar.scan_simulator.map_img.shape)
-            print(np.count_nonzero(RaceCar.scan_simulator.map_img[filtered_traj_indices[:,1], filtered_traj_indices[:,0]]==0))
-            
+            print(np.count_nonzero(
+                RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0))
             all_points = []
-            for i in range(offset_traj.shape[0]-1):
-                line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i+1, :])
+            for i in range(offset_traj.shape[0] - 1):
+                line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i + 1, :])
                 all_points.append(line_points)
             all_points = np.concatenate(all_points).reshape(-1, 2)
             print("line points: ", all_points.shape)
