@@ -45,13 +45,13 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
                         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=1000000,
+    parser.add_argument("--total-timesteps", type=int, default=1000000,  # default 1 million
                         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
                         help="the learning rate of the optimizer")
-    parser.add_argument("--num-envs", type=int, default=1,
+    parser.add_argument("--num-envs", type=int, default=2,  # multi-thread envs = 2
                         help="the number of parallel game environments")
-    parser.add_argument("--num-steps", type=int, default=2048,
+    parser.add_argument("--num-steps", type=int, default=2048,  # cleanrl 2048, for skir >= 5k for finishing 2 laps
                         help="the number of steps to run in each environment per policy rollout")
     parser.add_argument("--anneal-lr", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
                         help="Toggle learning rate annealing for policy and value networks")
@@ -81,11 +81,9 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir",
+    parser.add_argument("--map-name", type=str, default="skir_blocked",  # for overfitting
                         help="the map of the environment")
-    parser.add_argument("--time-horizon", "--t", type=int, default=1,
-                        help="time horizon for predicting trajectory")
-    parser.add_argument("--num-obstacles", type=int, default=1,
+    parser.add_argument("--num-obstacles", type=int, default=0,  # for overfitting
                         help="number of randomly generated obstacles")
     parser.add_argument("--num-lidar-scan", type=int, default=108,
                         help="number of randomly generated obstacles")
@@ -129,20 +127,36 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
+        # self.critic = nn.Sequential(
+        #     layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+        #     nn.Tanh(),
+        #     layer_init(nn.Linear(64, 64)),
+        #     nn.Tanh(),
+        #     layer_init(nn.Linear(64, 1), std=1.0),
+        # )
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 256)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
+            layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, 1), std=1.0),
+            layer_init(nn.Linear(256, 1), std=1.0),
         )
+
+        # self.actor_mean = nn.Sequential(
+        #     layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+        #     nn.Tanh(),
+        #     layer_init(nn.Linear(64, 64)),
+        #     nn.Tanh(),
+        #     layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
+        # )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 256)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
+            layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
+            layer_init(nn.Linear(256, np.prod(envs.single_action_space.shape)), std=0.01),
         )
+
         self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
 
     def get_value(self, x):
@@ -197,11 +211,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    
-    # agent.load_state_dict(torch.load('offset_collision_longevity.pkl'))
-    # agent.load_state_dict(torch.load('skir_fine_tune2_final.pkl'))
-    
-
+    # agent.load_state_dict(torch.load('skir_blocked_neighbor_dist_penalty.pkl'))  # 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -384,7 +394,6 @@ if __name__ == "__main__":
             print("save model")
             save_count += 1
 
-    # TODO: refine saving & naming
     model_path = Path(f'skir_with_predict_final.pkl')
     torch.save(agent.state_dict(), model_path)
 
