@@ -62,7 +62,7 @@ def main():
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
     # env.add_render_callback(renderer.render_front_traj) if rl_planner else None
-    # env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
+    env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
     env.add_render_callback(renderer.render_offset_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lidar_data) if rl_planner else None
@@ -109,35 +109,35 @@ def main():
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
             
             
-            # offset_x_index = np.ceil((offset_traj[:,0] + 12) / 0.05).astype(int)
-            # offset_y_index = np.ceil((offset_traj[:,1] + 10.7) / 0.05).astype(int)
-            # offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
+            offset_x_index = np.ceil((offset_traj[:,0] + 12) / 0.05).astype(int)
+            offset_y_index = np.ceil((offset_traj[:,1] + 10.7) / 0.05).astype(int)
+            offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
             
-            # max_rows = RaceCar.scan_simulator.map_img.shape[0]
-            # max_cols = RaceCar.scan_simulator.map_img.shape[1]
+            max_rows = RaceCar.scan_simulator.map_img.shape[0]
+            max_cols = RaceCar.scan_simulator.map_img.shape[1]
             
-            # all_indices = []
-            # for i in range(offset_traj_indices.shape[0]-1):
-            #     line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i+1, :])
-            #     all_indices.append(line_indices)
-            # all_indices = np.concatenate(all_indices).reshape(-1, 2)
+            all_indices = []
+            for i in range(offset_traj_indices.shape[0]-1):
+                line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i+1, :])
+                all_indices.append(line_indices)
+            all_indices = np.concatenate(all_indices).reshape(-1, 2)
             
-            # filtered_traj_indices = all_indices[(all_indices[:,1]<max_rows) & (all_indices[:,0]<max_cols)]
-            # print("offset traj index:", filtered_traj_indices.shape)
-            # # print(RaceCar.scan_simulator.map_img.shape)
-            # print(np.count_nonzero(RaceCar.scan_simulator.map_img[filtered_traj_indices[:,1], filtered_traj_indices[:,0]]==0))
+            filtered_traj_indices = all_indices[(all_indices[:,1]<max_rows) & (all_indices[:,0]<max_cols)]
+            print("offset traj index:", filtered_traj_indices.shape)
+            # print(RaceCar.scan_simulator.map_img.shape)
+            print(np.count_nonzero(RaceCar.scan_simulator.map_img[filtered_traj_indices[:,1], filtered_traj_indices[:,0]]==0))
             
-            # all_points = []
-            # for i in range(offset_traj.shape[0]-1):
-            #     line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i+1, :])
-            #     all_points.append(line_points)
-            # all_points = np.concatenate(all_points).reshape(-1, 2)
-            # print("line points: ", all_points.shape)
+            all_points = []
+            for i in range(offset_traj.shape[0]-1):
+                line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i+1, :])
+                all_points.append(line_points)
+            all_points = np.concatenate(all_points).reshape(-1, 2)
+            print("line points: ", all_points.shape)
 
             renderer.lidar_data = lidar_data
             # renderer.front_traj = front_traj
             # renderer.horizon_traj = horizon_traj
-            # renderer.horizon_traj = all_points
+            renderer.horizon_traj = all_points
             renderer.offset_traj = offset_traj
             renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
 

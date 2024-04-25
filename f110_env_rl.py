@@ -161,12 +161,7 @@ class F110RLEnv(F110Env):
         # get agent observation [lidar, front traj, pose]
         network_obs = self.get_network_obs()
 
-        # TODO: design the reward function
-        reward = 100 * step_time
-        reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        reward -= 1 * np.linalg.norm((offset[1:]-offset[:-1]), ord=2)
-        
-        # global -- self.offset_traj
+        # offset trajectory collision predictions
         offset_x_index = np.ceil((self.offset_traj[:,0] - self.orig_x) / self.map_resolution).astype(int)
         offset_y_index = np.ceil((self.offset_traj[:,1] - self.orig_y) / self.map_resolution).astype(int)
         offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
@@ -177,7 +172,12 @@ class F110RLEnv(F110Env):
             all_indices.append(line_indices)
         all_indices = np.concatenate(all_indices).reshape(-1, 2)
         filtered_traj_indices = all_indices[(all_indices[:,1]<self.map_max_rows) & (all_indices[:,0]<self.map_max_cols)]
-        
+
+
+        # TODO: design the reward function
+        reward = 100 * step_time
+        reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        reward -= 1 * np.linalg.norm((offset[1:]-offset[:-1]), ord=2)
         reward -= 100 * np.count_nonzero(RaceCar.scan_simulator.map_img[filtered_traj_indices[:,1], filtered_traj_indices[:,0]]==0)
         
         if super().current_obs['collisions'][0] == 1:
