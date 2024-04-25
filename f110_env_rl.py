@@ -145,7 +145,7 @@ class F110RLEnv(F110Env):
         # TODO: design the reward function
         reward = 100 * step_time  # 0.01
         reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        reward -= 10 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
+        reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
 
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000
