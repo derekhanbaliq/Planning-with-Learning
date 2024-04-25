@@ -58,7 +58,7 @@ class F110RLEnv(F110Env):
         self.horizon = int(10)
         self.predict_time = 1.0  # get waypoints in coming seconds
         self.rl_max_speed = 5.0
-        self.offset = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+        self.offset = [0.0] * self.horizon  # self.offset = [0.5] * self.horizon
 
         # set up the bounding boxes
         self.max_lidar_range = 30
@@ -101,9 +101,9 @@ class F110RLEnv(F110Env):
         init_index = np.random.randint(0, self.waypoints.x.shape[0])
         init_pos = np.array(
             [self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
+        init_pos = np.array([[0.0, 0.0, 0.0]])
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
-        init_pos = np.array([0.0, 0.0, 0.0])
         self.lap_time = 0.0
 
         # get init horizon traj
@@ -144,7 +144,8 @@ class F110RLEnv(F110Env):
 
         # TODO: design the reward function
         reward = 100 * step_time  # 0.01
-        reward -= 0.1 * np.linalg.norm(offset, ord=1)
+        reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        reward -= 10 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
 
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000
@@ -158,9 +159,3 @@ class F110RLEnv(F110Env):
 
         return network_obs, reward, self.done, info
 
-    # def reset(self, init_pose):
-    #     obs, reward, done, info = super().reset(init_pose)
-    #     return obs, reward, done, info
-
-    # def render(self, mode='human'):
-    #     super().render(mode)

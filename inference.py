@@ -25,10 +25,10 @@ from utils.lidar_utils import downsample_lidar_scan, get_lidar_data
 
 def main():
     method = 'pure_pursuit'  # pure_pursuit, lqr_steering, lqr_steering_speed
-    rl_planner = True  # if use RL planner, then enable
+    rl_planner = True  # enable if you use RL planner
 
     # load map & waypoints
-    map_name = 'skir_blocked'  # levine_2nd, skir, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -73,7 +73,7 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('skir_blocked.pkl'))
+    model.load_state_dict(torch.load(f'models/skir_blocked_256_pass_2_obs.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
