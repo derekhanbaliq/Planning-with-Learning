@@ -118,7 +118,7 @@ class Renderer:
         self.last_offset_traj.clear()
 
         for i in range(scaled_point.shape[0]):
-            b = e.batch.add(3, GL_TRIANGLES, None, create_triangle(scaled_point[i, 0], scaled_point[i, 1], 4),
+            b = e.batch.add(3, GL_TRIANGLES, None, create_triangle(scaled_point[i, 0], scaled_point[i, 1], 6),
                             ('c3B/stream', [255, 0, 0, 255, 0, 0, 255, 0, 0]))
             self.last_offset_traj.append(b)
 

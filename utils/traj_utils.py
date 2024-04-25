@@ -138,3 +138,57 @@ def local_to_global(obs, local_data):
 
     return global_data
 
+def bresenham_line_point(p1, p2):
+    points = []
+    dx = abs(p2[0] - p1[0])
+    dy = -abs(p2[1] - p1[1])
+    sx = 0.1 if p1[0] < p2[0] else -0.1
+    sy = 0.1 if p1[1] < p2[1] else -0.1
+    # sx = 1 if p1[0] < p2[0] else -1
+    # sy = 1 if p1[1] < p2[1] else -1
+    
+    err = dx + dy
+    x0 = p1[0]
+    y0 = p1[1]
+    while True:
+        points.append((x0, y0))
+        # if x0 == p2[0] and y0 == p2[1]:
+        if abs(x0 - p2[0])<0.2 and abs(y0 - p2[1])<0.2:
+            break
+        e2 = 2 * err
+        if e2 >= dy:
+            err += dy
+            x0 += sx
+        if e2 <= dx:
+            err += dx
+            y0 += sy
+            
+    return np.array(points)
+
+
+def bresenham_line_index(p1, p2):
+    points = []
+    dx = abs(p2[0] - p1[0])
+    dy = -abs(p2[1] - p1[1])
+    # sx = 0.1 if p1[0] < p2[0] else -0.1
+    # sy = 0.1 if p1[1] < p2[1] else -0.1
+    sx = 1 if p1[0] < p2[0] else -1
+    sy = 1 if p1[1] < p2[1] else -1
+    
+    err = dx + dy
+    x0 = p1[0]
+    y0 = p1[1]
+    while True:
+        points.append((x0, y0))
+        if x0 == p2[0] and y0 == p2[1]:
+        # if abs(x0 - p2[0])<0.2 and abs(y0 - p2[1])<0.2:
+            break
+        e2 = 2 * err
+        if e2 >= dy:
+            err += dy
+            x0 += sx
+        if e2 <= dx:
+            err += dx
+            y0 += sy
+            
+    return np.array(points)

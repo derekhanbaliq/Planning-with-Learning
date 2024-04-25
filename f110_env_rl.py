@@ -8,15 +8,17 @@
 import os
 
 import numpy as np
+import yaml
 
 from controllers.pure_pursuit import PurePursuit, get_lookahead_point
+from f110_gym.envs.base_classes import RaceCar
 from f110_gym.envs.f110_env import F110Env
 from gym import spaces
+from utils.lidar_utils import downsample_lidar_scan
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj, \
-    global_to_local, local_to_global
+    global_to_local, local_to_global, bresenham_line_index
 from utils.waypoint_loader import WaypointLoader
-from utils.lidar_utils import downsample_lidar_scan
 
 
 class F110RLEnv(F110Env):
@@ -30,6 +32,18 @@ class F110RLEnv(F110Env):
         # load map, waypoints, controller, and renderer
         map_path = os.path.abspath(os.path.join('maps', map_name))
         csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)
+
+        with open(map_path + '/' + map_name + '_map' + '.yaml', 'r') as yaml_stream:
+            try:
+                map_metadata = yaml.safe_load(yaml_stream)
+                self.map_resolution = map_metadata['resolution']
+                self.origin = map_metadata['origin']
+            except yaml.YAMLError as ex:
+                print(ex)
+
+        self.orig_x = self.origin[0]
+        self.orig_y = self.origin[1]
+
         self.waypoints = WaypointLoader(map_name, csv_data)
         self.controller = PurePursuit(self.waypoints)
         self.renderer = Renderer(self.waypoints)
@@ -46,8 +60,12 @@ class F110RLEnv(F110Env):
             obt_pose = kwargs['obt_poses']
         else:
             # randomly generate obstacles
-            obt_index = np.random.uniform(0, self.waypoints.x.shape[0], size=(self.num_obstacles,)).astype(int)
-            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index]]).transpose().reshape((-1, 2))
+            obt_index = np.random.uniform(1, self.waypoints.x.shape[0] - 1, size=(self.num_obstacles,)).astype(int)
+            # obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index], self.waypoints.θ[obt_index]]).transpose().reshape((-1, 3))
+            thetas = np.arctan2(self.waypoints.x[obt_index + 1] - self.waypoints.x[obt_index - 1],
+                                self.waypoints.y[obt_index + 1] - self.waypoints.y[obt_index - 1])
+            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index], thetas]).transpose().reshape(
+                (-1, 3))
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
@@ -59,6 +77,9 @@ class F110RLEnv(F110Env):
         self.predict_time = 1.0  # get waypoints in coming seconds
         self.rl_max_speed = 5.0
         self.offset = [0.0] * self.horizon  # self.offset = [0.5] * self.horizon
+
+        self.map_max_rows = RaceCar.scan_simulator.map_img.shape[0]
+        self.map_max_cols = RaceCar.scan_simulator.map_img.shape[1]
 
         # set up the bounding boxes
         self.max_lidar_range = 30
@@ -142,10 +163,23 @@ class F110RLEnv(F110Env):
         # get agent observation [lidar, front traj, pose]
         network_obs = self.get_network_obs()
 
-        # TODO: design the reward function
-        reward = 100 * step_time  # 0.01
+        # offset trajectory collision predictions
+        offset_x_index = np.ceil((self.offset_traj[:, 0] - self.orig_x) / self.map_resolution).astype(int)
+        offset_y_index = np.ceil((self.offset_traj[:, 1] - self.orig_y) / self.map_resolution).astype(int)
+        offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
+        all_indices = []
+        for i in range(offset_traj_indices.shape[0] - 1):
+            line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i + 1, :])
+            all_indices.append(line_indices)
+        all_indices = np.concatenate(all_indices).reshape(-1, 2)
+        filtered_traj_indices = all_indices[
+            (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)]
+
+        reward = 100 * step_time
         reward -= 0.1 * np.linalg.norm(offset, ord=2)
         reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
+        reward -= 100 * np.count_nonzero(
+            RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
 
         if super().current_obs['collisions'][0] == 1:
             reward -= 1000

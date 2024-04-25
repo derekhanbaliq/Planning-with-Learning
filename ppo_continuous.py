@@ -390,11 +390,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_blocked_256_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_with_predict_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_blocked_256.pkl')
+    model_path = Path(f'skir_with_predict_final.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
