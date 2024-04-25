@@ -199,9 +199,9 @@ if __name__ == "__main__":
     agent = Agent(envs).to(device)
     
     # agent.load_state_dict(torch.load('offset_collision_longevity.pkl'))
-    agent.load_state_dict(torch.load('skir_fine_tune2_final.pkl'))
+    # agent.load_state_dict(torch.load('skir_fine_tune2_final.pkl'))
     
-    
+
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -380,12 +380,12 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_simpler_input_4obs_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_with_predict_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
     # TODO: refine saving & naming
-    model_path = Path(f'skir_simpler_input_4obs.pkl')
+    model_path = Path(f'skir_with_predict_final.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
