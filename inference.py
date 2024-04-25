@@ -18,9 +18,12 @@ from f110_gym.envs.f110_env import F110Env
 from ppo_continuous import Agent
 from utils.render import Renderer, fix_gui
 from utils.traj_utils import get_front_traj, get_interpolated_traj_with_horizon, densify_offset_traj, get_offset_traj, \
-                             global_to_local, local_to_global
+                             global_to_local, local_to_global, bresenham_line_index, bresenham_line_point
 from utils.waypoint_loader import WaypointLoader
 from utils.lidar_utils import downsample_lidar_scan, get_lidar_data
+
+
+from f110_gym.envs.base_classes import RaceCar
 
 
 def main():
@@ -44,7 +47,7 @@ def main():
         controller = LQRSteeringSpeedController(waypoints)
 
     # generate random obstacles
-    num_obstacles = 2  # length_obs = 0.58 # 0.32, width_obs  = 0.31 # 0.22
+    num_obstacles = 0  # length_obs = 0.58 # 0.32, width_obs  = 0.31 # 0.22
     obt_index = np.random.uniform(1, waypoints.x.shape[0]-1, size=(num_obstacles,)).astype(int)
     
     # obt_pose = np.array([waypoints.x[obt_index], waypoints.y[obt_index], waypoints.θ[obt_index]]).transpose().reshape((-1, 3))
@@ -59,7 +62,7 @@ def main():
     renderer = Renderer(waypoints)
     env.add_render_callback(renderer.render_waypoints)
     # env.add_render_callback(renderer.render_front_traj) if rl_planner else None
-    # env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
+    env.add_render_callback(renderer.render_horizon_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lookahead_point) if rl_planner else None
     env.add_render_callback(renderer.render_offset_traj) if rl_planner else None
     env.add_render_callback(renderer.render_lidar_data) if rl_planner else None
@@ -74,9 +77,9 @@ def main():
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
-                       num_lidar_scan=108)
+                       num_lidar_scan=1080)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load('skir_simpler_input_100k_no_obs.pkl'))
+    model.load_state_dict(torch.load('skir_with_obs_0.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -104,10 +107,37 @@ def main():
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
             lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
+            
+            
+            offset_x_index = np.ceil((offset_traj[:,0] + 12) / 0.05).astype(int)
+            offset_y_index = np.ceil((offset_traj[:,1] + 10.7) / 0.05).astype(int)
+            offset_traj_indices = np.vstack((offset_x_index, offset_y_index)).T
+            
+            max_rows = RaceCar.scan_simulator.map_img.shape[0]
+            max_cols = RaceCar.scan_simulator.map_img.shape[1]
+            
+            all_indices = []
+            for i in range(offset_traj_indices.shape[0]-1):
+                line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i+1, :])
+                all_indices.append(line_indices)
+            all_indices = np.concatenate(all_indices).reshape(-1, 2)
+            
+            filtered_traj_indices = all_indices[(all_indices[:,1]<max_rows) & (all_indices[:,0]<max_cols)]
+            print("offset traj index:", filtered_traj_indices.shape)
+            # print(RaceCar.scan_simulator.map_img.shape)
+            print(np.count_nonzero(RaceCar.scan_simulator.map_img[filtered_traj_indices[:,1], filtered_traj_indices[:,0]]==0))
+            
+            all_points = []
+            for i in range(offset_traj.shape[0]-1):
+                line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i+1, :])
+                all_points.append(line_points)
+            all_points = np.concatenate(all_points).reshape(-1, 2)
+            print("line points: ", all_points.shape)
 
             renderer.lidar_data = lidar_data
             # renderer.front_traj = front_traj
             # renderer.horizon_traj = horizon_traj
+            renderer.horizon_traj = all_points
             renderer.offset_traj = offset_traj
             renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
 
