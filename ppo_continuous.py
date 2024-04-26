@@ -51,7 +51,7 @@ def parse_args():
                         help="the learning rate of the optimizer")
     parser.add_argument("--num-envs", type=int, default=2,  # multi-thread envs = 2
                         help="the number of parallel game environments")
-    parser.add_argument("--num-steps", type=int, default=2048,  # cleanrl 2048, for skir >= 5k for finishing 2 laps
+    parser.add_argument("--num-steps", type=int, default=2048,  # cleanrl 2048, for skir >= 5k for finishing 2 laps?
                         help="the number of steps to run in each environment per policy rollout")
     parser.add_argument("--anneal-lr", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
                         help="Toggle learning rate annealing for policy and value networks")
@@ -81,7 +81,7 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir_blocked",  # for overfitting
+    parser.add_argument("--map-name", type=str, default="skir",  # for overfitting
                         help="the map of the environment")
     parser.add_argument("--num-obstacles", type=int, default=0,  # for overfitting
                         help="number of randomly generated obstacles")
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    # agent.load_state_dict(torch.load('skir_blocked_neighbor_dist_penalty.pkl'))  # 回锅肉！
+    agent.load_state_dict(torch.load('skir_bootstrap_1m.pkl'))  # 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -390,11 +390,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_with_predict_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_bootstrap_2m_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_with_predict_final.pkl')
+    model_path = Path(f'skir_bootstrap_2m.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()

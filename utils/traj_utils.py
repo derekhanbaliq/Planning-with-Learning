@@ -8,7 +8,7 @@ from scipy.spatial import distance
 from scipy.interpolate import interp1d
 
 
-def get_front_traj(obs, profile, predict_time=2):
+def get_front_traj(obs, profile, predict_time=2.0):
     waypoints = np.array([profile.x, profile.y]).T
     ref_speed = profile.v
     # ref_curvature = profile.γ
@@ -138,6 +138,7 @@ def local_to_global(obs, local_data):
 
     return global_data
 
+
 def bresenham_line_point(p1, p2):
     points = []
     dx = abs(p2[0] - p1[0])
@@ -146,14 +147,14 @@ def bresenham_line_point(p1, p2):
     sy = 0.1 if p1[1] < p2[1] else -0.1
     # sx = 1 if p1[0] < p2[0] else -1
     # sy = 1 if p1[1] < p2[1] else -1
-    
+
     err = dx + dy
     x0 = p1[0]
     y0 = p1[1]
     while True:
         points.append((x0, y0))
         # if x0 == p2[0] and y0 == p2[1]:
-        if abs(x0 - p2[0])<0.2 and abs(y0 - p2[1])<0.2:
+        if abs(x0 - p2[0]) < 0.2 and abs(y0 - p2[1]) < 0.2:
             break
         e2 = 2 * err
         if e2 >= dy:
@@ -162,7 +163,7 @@ def bresenham_line_point(p1, p2):
         if e2 <= dx:
             err += dx
             y0 += sy
-            
+
     return np.array(points)
 
 
@@ -174,14 +175,14 @@ def bresenham_line_index(p1, p2):
     # sy = 0.1 if p1[1] < p2[1] else -0.1
     sx = 1 if p1[0] < p2[0] else -1
     sy = 1 if p1[1] < p2[1] else -1
-    
+
     err = dx + dy
     x0 = p1[0]
     y0 = p1[1]
     while True:
         points.append((x0, y0))
         if x0 == p2[0] and y0 == p2[1]:
-        # if abs(x0 - p2[0])<0.2 and abs(y0 - p2[1])<0.2:
+            # if abs(x0 - p2[0])<0.2 and abs(y0 - p2[1])<0.2:
             break
         e2 = 2 * err
         if e2 >= dy:
@@ -190,5 +191,5 @@ def bresenham_line_index(p1, p2):
         if e2 <= dx:
             err += dx
             y0 += sy
-            
+
     return np.array(points)

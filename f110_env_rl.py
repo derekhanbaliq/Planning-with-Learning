@@ -73,9 +73,9 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 1.0  # get waypoints in coming seconds
-        self.rl_max_speed = 5.0
-        self.offset = [0.0] * self.horizon  # self.offset = [0.5] * self.horizon
+        self.predict_time = 2.0  # get waypoints in coming seconds
+        self.rl_max_speed = 2.0
+        self.offset = [0.5] * self.horizon  # self.offset = [0.5] * self.horizon
 
         self.map_max_rows = RaceCar.scan_simulator.map_img.shape[0]
         self.map_max_cols = RaceCar.scan_simulator.map_img.shape[1]
@@ -147,7 +147,7 @@ class F110RLEnv(F110Env):
         self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
         dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
-        lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
+        lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.0)
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
 
         # step function in race car, time step is k+1 now
@@ -174,9 +174,14 @@ class F110RLEnv(F110Env):
         filtered_traj_indices = all_indices[
             (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)]
 
+        # Standard talk avoid 2 obs config
+        # reward = 100 * step_time
+        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        # reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
+
         reward = 100 * step_time
-        reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
+        reward -= 1 * np.linalg.norm(offset, ord=2)
+        # reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
         # reward -= 100 * np.count_nonzero(
         #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
 

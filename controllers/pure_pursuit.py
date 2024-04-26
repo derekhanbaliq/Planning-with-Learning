@@ -99,7 +99,7 @@ class PurePursuit:
         return targetPoint, target_point_index
 
 
-def get_lookahead_point(dense_traj, lookahead_dist):
+def get_lookahead_point(dense_traj, lookahead_dist=1.0):
     acc_dist = 0
     for i in range(dense_traj.shape[0] - 1):
         acc_dist += np.linalg.norm(dense_traj[i + 1, :2] - dense_traj[i, :2])

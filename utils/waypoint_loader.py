@@ -15,6 +15,6 @@ class WaypointLoader:
               or map_name == 'levine_2nd' or map_name == 'skir' or map_name == 'skir_blocked'):
             self.x = csv_data[:, 1]
             self.y = csv_data[:, 2]
-            self.v = csv_data[:, 5]
+            self.v = np.full(csv_data[:, 5].shape[0], 2.0)  # csv_data[:, 5]
             self.θ = csv_data[:, 3] + np.pi / 2  # coordinate matters!
             self.γ = csv_data[:, 4]

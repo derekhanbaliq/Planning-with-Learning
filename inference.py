@@ -29,7 +29,7 @@ def main():
     rl_planner = True  # enable if you use RL planner
 
     # load map & waypoints
-    map_name = 'skir_blocked'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -76,7 +76,8 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load(f'models/skir_blocked_256_pass_2_obs.pkl'))
+    # model.load_state_dict(torch.load(f'models/skir_simpler_input.pkl'))
+    model.load_state_dict(torch.load(f'skir_bootstrap_1m.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -102,7 +103,7 @@ def main():
             local_offset_traj = get_offset_traj(local_horizon_traj, offset)
             offset_traj = local_to_global(obs, local_offset_traj)
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
-            lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.5)
+            lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=1.0)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
             speed = 2.0
 
