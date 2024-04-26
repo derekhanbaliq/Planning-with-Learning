@@ -390,11 +390,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_bootstrap_Xm_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_bootstrap_2m_short_l_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_bootstrap_Xm.pkl')
+    model_path = Path(f'skir_bootstrap_2m_short_l.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
