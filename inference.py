@@ -103,7 +103,7 @@ def main():
             local_offset_traj = get_offset_traj(local_horizon_traj, offset)
             offset_traj = local_to_global(obs, local_offset_traj)
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
-            lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=rl_env.lookahead_dist)
+            lookahead_point_profile = get_lookahead_point(obs, dense_offset_traj, lookahead_dist=rl_env.lookahead_dist)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
 
             offset_x_index = np.ceil((offset_traj[:, 0] + 12) / 0.05).astype(int)

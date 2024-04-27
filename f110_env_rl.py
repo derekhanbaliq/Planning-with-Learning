@@ -148,7 +148,7 @@ class F110RLEnv(F110Env):
         self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
         dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v]
-        lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=self.lookahead_dist)
+        lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj, lookahead_dist=self.lookahead_dist)
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
 
         # step function in race car, time step is k+1 now

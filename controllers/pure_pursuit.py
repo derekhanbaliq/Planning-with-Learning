@@ -99,12 +99,10 @@ class PurePursuit:
         return targetPoint, target_point_index
 
 
-def get_lookahead_point(dense_traj, lookahead_dist=1.0):
-    acc_dist = 0
+def get_lookahead_point(obs, dense_traj, lookahead_dist=0.8):
+    car_pose = np.array([obs['poses_x'][0], obs['poses_y'][0]])
     for i in range(dense_traj.shape[0] - 1):
-        acc_dist += np.linalg.norm(dense_traj[i + 1, :2] - dense_traj[i, :2])
-        # print(acc_dist)
-        if acc_dist >= lookahead_dist:
+        if np.linalg.norm(dense_traj[i][:2] - car_pose, ord=2) >= lookahead_dist:
             return dense_traj[i]
     return dense_traj[dense_traj.shape[0] - 1]
 
