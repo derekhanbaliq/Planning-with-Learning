@@ -76,8 +76,8 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    # model.load_state_dict(torch.load(f'models/skir_simpler_input.pkl'))
-    model.load_state_dict(torch.load(f'skir_bootstrap_1m_short_l.pkl'))
+    model.load_state_dict(torch.load(f'models/4_256/skir_bootstrap_1m_larger_model.pkl'))
+    # model.load_state_dict(torch.load(f'skir_bootstrap_1m_larger_model.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:

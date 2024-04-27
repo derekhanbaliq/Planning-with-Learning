@@ -139,6 +139,10 @@ class Agent(nn.Module):
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
+            layer_init(nn.Linear(256, 256)),
+            nn.Tanh(),
+            layer_init(nn.Linear(256, 256)),
+            nn.Tanh(),
             layer_init(nn.Linear(256, 1), std=1.0),
         )
 
@@ -151,6 +155,10 @@ class Agent(nn.Module):
         # )
         self.actor_mean = nn.Sequential(
             layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 256)),
+            nn.Tanh(),
+            layer_init(nn.Linear(256, 256)),
+            nn.Tanh(),
+            layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
@@ -390,11 +398,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_bootstrap_2m_short_l_'+str(save_count)+'.pkl'))
+            torch.save(agent.state_dict(), Path(f'skir_bootstrap_1m_4_256_'+str(save_count)+'.pkl'))
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_bootstrap_2m_short_l.pkl')
+    model_path = Path(f'skir_bootstrap_1m_4_256.pkl')
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
