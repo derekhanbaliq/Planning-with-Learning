@@ -65,7 +65,6 @@ def main():
     env.add_render_callback(fix_gui)
 
     lap_time = 0.0
-
     # init_index = np.random.randint(0, waypoints.x.shape[0])
     # init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
@@ -102,9 +101,11 @@ def main():
             # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
             local_offset_traj = get_offset_traj(local_horizon_traj, offset)
             offset_traj = local_to_global(obs, local_offset_traj)
+            offset_traj = np.vstack((np.array([[obs['poses_x'][0], obs['poses_y'][0], 2.0]]),
+                                     offset_traj))  # add car pose as the first point
             dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
             lookahead_point_profile = get_lookahead_point(obs, dense_offset_traj, lookahead_dist=rl_env.lookahead_dist)
-            steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.rl_max_speed)
+            steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.fixed_speed)
 
             offset_x_index = np.ceil((offset_traj[:, 0] + 12) / 0.05).astype(int)
             offset_y_index = np.ceil((offset_traj[:, 1] + 10.7) / 0.05).astype(int)
@@ -117,16 +118,16 @@ def main():
                 all_indices.append(line_indices)
             all_indices = np.concatenate(all_indices).reshape(-1, 2)
             filtered_traj_indices = all_indices[(all_indices[:, 1] < max_rows) & (all_indices[:, 0] < max_cols)]
-            print("offset traj index:", filtered_traj_indices.shape)
+            # print("offset traj index:", filtered_traj_indices.shape)
             # print(RaceCar.scan_simulator.map_img.shape)
-            print(np.count_nonzero(
+            print("number of overlapped points =", np.count_nonzero(
                 RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0))
             all_points = []
             for i in range(offset_traj.shape[0] - 1):
                 line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i + 1, :])
                 all_points.append(line_points)
             all_points = np.concatenate(all_points).reshape(-1, 2)
-            print("line points: ", all_points.shape)
+            # print("line points: ", all_points.shape)
 
             renderer.lidar_data = lidar_data
             # renderer.front_traj = front_traj
@@ -141,7 +142,6 @@ def main():
         print("steering = {}, speed = {}".format(round(steering, 4), round(speed, 4)))
 
         obs, time_step, done, _ = env.step(np.array([[steering, speed]]))
-
         lap_time += time_step
         env.render(mode='human')
 

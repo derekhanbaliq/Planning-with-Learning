@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial import distance
-from scipy.interpolate import interp1d
 
 
 class PurePursuit:
@@ -105,5 +104,4 @@ def get_lookahead_point(obs, dense_traj, lookahead_dist=0.8):
         if np.linalg.norm(dense_traj[i][:2] - car_pose, ord=2) >= lookahead_dist:
             return dense_traj[i]
     return dense_traj[dense_traj.shape[0] - 1]
-
 

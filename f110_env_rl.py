@@ -74,7 +74,7 @@ class F110RLEnv(F110Env):
         # init params
         self.horizon = int(10)
         self.predict_time = 2.0  # get waypoints in coming seconds
-        self.rl_max_speed = 2.0
+        self.fixed_speed = 2.0
         self.lookahead_dist = 0.8
         self.offset = [0.5] * self.horizon  # self.offset = [0.5] * self.horizon
 
@@ -118,10 +118,9 @@ class F110RLEnv(F110Env):
 
     def reset(self, seed=1):
         # initialization
-        # np.random.seed(0)
-        init_index = np.random.randint(0, self.waypoints.x.shape[0])
-        init_pos = np.array(
-            [self.waypoints.x[init_index], self.waypoints.y[init_index], self.waypoints.θ[init_index]]).reshape((1, -1))
+        # init_index = np.random.randint(0, self.waypoints.x.shape[0])
+        # init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
+        #                      self.waypoints.θ[init_index]]).reshape((1, -1))
         init_pos = np.array([[0.0, 0.0, 0.0]])
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
@@ -147,12 +146,14 @@ class F110RLEnv(F110Env):
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
         self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
+        self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0], self.fixed_speed]]),
+                                      self.offset_traj))  # add car pose as the first point
         dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj, lookahead_dist=self.lookahead_dist)
-        steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
+        steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.fixed_speed)
 
         # step function in race car, time step is k+1 now
-        self.obs, step_time, self.done, info = super().step(np.array([[steering, 2.0]]))
+        self.obs, step_time, self.done, info = super().step(np.array([[steering, self.fixed_speed]]))
         self.lap_time += step_time
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
