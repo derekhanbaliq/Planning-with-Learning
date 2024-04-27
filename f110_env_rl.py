@@ -147,7 +147,7 @@ class F110RLEnv(F110Env):
         # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
         self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
-        dense_offset_traj = densify_offset_traj(self.horizon_traj)  # [x, y, v]
+        dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v]
         lookahead_point_profile = get_lookahead_point(dense_offset_traj, lookahead_dist=self.lookahead_dist)
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.rl_max_speed)
 
@@ -175,19 +175,21 @@ class F110RLEnv(F110Env):
         filtered_traj_indices = all_indices[
             (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)]
 
-        # Standard talk avoid 2 obs config
-        # reward = 100 * step_time
-        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        # reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
-
+        # !!!! modify your reward
+        # derek's reward for bootstrapping
         reward = 100 * step_time
         reward -= 1 * np.linalg.norm(offset, ord=2)
+        if super().current_obs['collisions'][0] == 1:
+            reward -= 1000
+
+        # biao's reward for obstacle avoidance
+        # reward = 100 * step_time
+        # reward -= 1 * np.linalg.norm(offset, ord=2)
         # reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
         # reward -= 100 * np.count_nonzero(
         #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
-
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 1000
+        # if super().current_obs['collisions'][0] == 1:
+        #     reward -= 1000
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj

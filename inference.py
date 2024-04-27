@@ -66,8 +66,8 @@ def main():
 
     lap_time = 0.0
 
-    init_index = np.random.randint(0, waypoints.x.shape[0])
-    init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
+    # init_index = np.random.randint(0, waypoints.x.shape[0])
+    # init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
     init_pos = np.array([[0.0, 0.0, 0.0]])
 
@@ -76,7 +76,7 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load(f'models/4_256/skir_bootstrap_1m_larger_model.pkl'))
+    model.load_state_dict(torch.load(f'models/4_256/skir_bootstrap_1m_larger_model.pkl'))  # !!!! modify load model
     # model.load_state_dict(torch.load(f'skir_bootstrap_1m_larger_model.pkl'))
 
     while not done:
