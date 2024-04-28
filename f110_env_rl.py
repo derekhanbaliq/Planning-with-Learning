@@ -173,8 +173,8 @@ class F110RLEnv(F110Env):
             line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i + 1, :])
             all_indices.append(line_indices)
         all_indices = np.concatenate(all_indices).reshape(-1, 2)
-        filtered_traj_indices = all_indices[
-            (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)
+        filtered_traj_indices = all_indices[ 
+            (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols) &
             (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
 
         # !!!! modify your reward
