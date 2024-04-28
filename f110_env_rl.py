@@ -63,8 +63,8 @@ class F110RLEnv(F110Env):
             obt_index = np.random.uniform(1, self.waypoints.x.shape[0] - 1, size=(self.num_obstacles,)).astype(int)
             thetas = np.arctan2(self.waypoints.x[obt_index + 1] - self.waypoints.x[obt_index - 1],
                                 self.waypoints.y[obt_index + 1] - self.waypoints.y[obt_index - 1])
-            obt_pose = np.array([self.waypoints.x[obt_index], self.waypoints.y[obt_index], thetas]).transpose().reshape(
-                (-1, 3))
+            obt_pose = np.array([self.waypoints.x[obt_index],
+                                 self.waypoints.y[obt_index], thetas]).transpose().reshape((-1, 3))
 
         # load the super class - F110Env
         super(F110RLEnv, self).__init__(map=map_path + '/' + map_name + '_map',
@@ -121,7 +121,7 @@ class F110RLEnv(F110Env):
         init_index = np.random.randint(0, self.waypoints.x.shape[0])
         init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
                              self.waypoints.θ[init_index]]).reshape((1, -1))
-        # init_pos = np.array([[0.0, 0.0, 0.0]])
+        # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
@@ -173,7 +173,7 @@ class F110RLEnv(F110Env):
             line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i + 1, :])
             all_indices.append(line_indices)
         all_indices = np.concatenate(all_indices).reshape(-1, 2)
-        filtered_traj_indices = all_indices[ 
+        filtered_traj_indices = all_indices[
             (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols) &
             (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
 

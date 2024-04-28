@@ -68,7 +68,7 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
-    # init_pos = np.array([[0.0, 0.0, 0.0]])
+    # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
 
     obs, _, done, _ = env.reset(init_pos)
 
