@@ -81,7 +81,7 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir",  # !!!! skir for bt, skir_blocked for overfitting
+    parser.add_argument("--map-name", type=str, default="skir_blocked",  # !!!! skir for bt, skir_blocked for overfitting
                         help="the map of the environment")
     parser.add_argument("--num-obstacles", type=int, default=0,  # !!!! use 0 for overfitting
                         help="number of randomly generated obstacles")
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    # agent.load_state_dict(torch.load(f'models/4_256/skir_bootstrap_1m_larger_model.pkl'))  # !!!! 回锅肉！
+    # agent.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))  # !!!! 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -398,12 +398,12 @@ if __name__ == "__main__":
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
                     
-        if (update % int(num_updates / 5)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_bootstrap_1m_'+str(save_count)+'.pkl'))  # !!!! change name
+        if (update % int(num_updates / 10)) == 0:
+            torch.save(agent.state_dict(), Path(f'skir_obs_derek_10m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_bootstrap_1m.pkl')  # !!!! change name accordingly
+    model_path = Path(f'skir_obs_derek_10m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
