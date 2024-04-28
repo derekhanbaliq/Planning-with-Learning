@@ -117,7 +117,8 @@ def main():
                 line_indices = bresenham_line_index(offset_traj_indices[i, :], offset_traj_indices[i + 1, :])
                 all_indices.append(line_indices)
             all_indices = np.concatenate(all_indices).reshape(-1, 2)
-            filtered_traj_indices = all_indices[(all_indices[:, 1] < max_rows) & (all_indices[:, 0] < max_cols)]
+            filtered_traj_indices = all_indices[(all_indices[:, 1] < max_rows) & (all_indices[:, 0] < max_cols)
+                                                (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
             # print("offset traj index:", filtered_traj_indices.shape)
             # print(RaceCar.scan_simulator.map_img.shape)
             print("number of overlapped points =", np.count_nonzero(

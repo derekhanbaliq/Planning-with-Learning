@@ -174,23 +174,29 @@ class F110RLEnv(F110Env):
             all_indices.append(line_indices)
         all_indices = np.concatenate(all_indices).reshape(-1, 2)
         filtered_traj_indices = all_indices[
-            (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)]
+            (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols)
+            (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
 
         # !!!! modify your reward
         # derek's reward for bootstrapping
-        reward = 100 * step_time
-        reward -= 1 * np.linalg.norm(offset, ord=2)
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 1000
-
-        # biao's reward for obstacle avoidance
         # reward = 100 * step_time
         # reward -= 1 * np.linalg.norm(offset, ord=2)
-        # reward -= 1 * np.linalg.norm((offset[1:] - offset[:-1]), ord=2)
-        # reward -= 100 * np.count_nonzero(
-        #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
         # if super().current_obs['collisions'][0] == 1:
         #     reward -= 1000
+
+        # !!!! modify your reward
+        # biao's reward for obstacle avoidance
+        reward = 300 * step_time
+        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        first_diff = (offset[1:] - offset[:-1])
+        second_diff = first_diff[1:] - first_diff[:-1]
+        reward -= 0.1 * np.linalg.norm(first_diff, ord=2)
+        reward -= 0.2 * np.linalg.norm(second_diff, ord=2)
+        reward -= 5 * np.count_nonzero(
+            RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
+
+        if super().current_obs['collisions'][0] == 1:
+            reward -= 100
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj
