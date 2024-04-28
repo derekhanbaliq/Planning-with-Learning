@@ -118,10 +118,10 @@ class F110RLEnv(F110Env):
 
     def reset(self, seed=1):
         # initialization
-        init_index = np.random.randint(0, self.waypoints.x.shape[0])
-        init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
-                             self.waypoints.θ[init_index]]).reshape((1, -1))
-        # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
+        # init_index = np.random.randint(0, self.waypoints.x.shape[0])
+        # init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
+        #                      self.waypoints.θ[init_index]]).reshape((1, -1))
+        init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
@@ -132,6 +132,8 @@ class F110RLEnv(F110Env):
         self.local_horizon_traj = global_to_local(self.obs, self.horizon_traj)
         self.local_offset_traj = get_offset_traj(self.local_horizon_traj, self.offset)
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
+        self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0], self.fixed_speed]]),
+                                      self.offset_traj))  # add car pose as the first point
 
         if self.render_flag:
             self.renderer.front_traj = self.front_traj
@@ -148,7 +150,8 @@ class F110RLEnv(F110Env):
         self.offset_traj = local_to_global(self.obs, self.local_offset_traj)
         self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0], self.fixed_speed]]),
                                       self.offset_traj))  # add car pose as the first point
-        dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v]
+        # dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v]
+        dense_offset_traj = densify_offset_traj(self.horizon_traj)  # !!!! for bootstrap only!
         lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj, lookahead_dist=self.lookahead_dist)
         steering, speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.fixed_speed)
 
@@ -179,24 +182,23 @@ class F110RLEnv(F110Env):
 
         # !!!! modify your reward
         # derek's reward for bootstrapping
-        # reward = 100 * step_time
-        # reward -= 1 * np.linalg.norm(offset, ord=2)
-        # if super().current_obs['collisions'][0] == 1:
-        #     reward -= 1000
+        reward = 100 * step_time
+        reward -= 1 * np.linalg.norm(offset, ord=2)
+        if super().current_obs['collisions'][0] == 1:
+            reward -= 1000
 
         # !!!! modify your reward
-        # biao's reward for obstacle avoidance
-        reward = 300 * step_time
-        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        first_diff = (offset[1:] - offset[:-1])
-        second_diff = first_diff[1:] - first_diff[:-1]
-        reward -= 0.1 * np.linalg.norm(first_diff, ord=2)
-        reward -= 0.2 * np.linalg.norm(second_diff, ord=2)
-        reward -= 5 * np.count_nonzero(
-            RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
-
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 100
+        # # biao's reward for obstacle avoidance
+        # reward = 300 * step_time
+        # # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        # first_diff = (offset[1:] - offset[:-1])
+        # second_diff = first_diff[1:] - first_diff[:-1]
+        # reward -= 0.1 * np.linalg.norm(first_diff, ord=2)
+        # reward -= 0.2 * np.linalg.norm(second_diff, ord=2)
+        # reward -= 5 * np.count_nonzero(
+        #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)
+        # if super().current_obs['collisions'][0] == 1:
+        #     reward -= 100
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj
