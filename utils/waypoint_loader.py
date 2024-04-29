@@ -18,3 +18,8 @@ class WaypointLoader:
             self.v = np.full(csv_data[:, 5].shape[0], 2.0)  # csv_data[:, 5]
             self.θ = csv_data[:, 3] + np.pi / 2  # coordinate matters!
             self.γ = csv_data[:, 4]
+
+
+def pi_2_pi(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
+
