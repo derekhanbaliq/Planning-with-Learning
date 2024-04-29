@@ -143,7 +143,7 @@ def main():
         #     renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
 
         if method == 'kinematic_mpc':
-            if int(lap_time * 100) % 20 == 0:  # 100 Hz
+            if int(lap_time * 100) % 10 == 0:  # 100 Hz
                 car_state = env.sim.agents[0].state  # [x, y, steer_angle, vel, yaw_angle, yaw_rate, slip_angle]
                 steering, speed, mpc_ref_traj, mpc_pred_traj = controller.plan(car_state)
                 renderer.offset_traj = mpc_ref_traj  # red
