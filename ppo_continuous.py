@@ -399,7 +399,7 @@ if __name__ == "__main__":
                     wandb.log({f"videos": wandb.Video(f"videos/{run_name}/{filename}")})
                     video_filenames.add(filename)
                     
-        if (update % int(num_updates / 10)) == 0:
+        if (update % int(num_updates / 20)) == 0:
             torch.save(agent.state_dict(), Path(f'skir_obs_derek_10m_2obs_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
