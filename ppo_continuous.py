@@ -45,11 +45,11 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
                         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=1000000,  # !!!! default 1 million
+    parser.add_argument("--total-timesteps", type=int, default=10000000,  # !!!! 10 million
                         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
                         help="the learning rate of the optimizer")
-    parser.add_argument("--num-envs", type=int, default=2,  # !!!! multi-thread envs
+    parser.add_argument("--num-envs", type=int, default=10,  # !!!! multi-thread envs 1 million for each env
                         help="the number of parallel game environments")
     parser.add_argument("--num-steps", type=int, default=2048,
                         help="the number of steps to run in each environment per policy rollout")
@@ -220,6 +220,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
+    agent.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))
     # agent.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))  # !!!! 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
@@ -399,11 +400,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 10)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_obs_derek_10m_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'skir_obs_derek_10m_2obs_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_obs_derek_10m.pkl')  # !!!! change name accordingly
+    model_path = Path(f'skir_obs_derek_10m_2obs.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()

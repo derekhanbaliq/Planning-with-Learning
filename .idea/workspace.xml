@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d727f57b-69a3-4230-8e70-00fa64089e34" name="Changes" comment="pull from main">
+      <change afterPath="$PROJECT_DIR$/maps/skir_blocked/skir_blocked_map_4obs.pgm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/f110_env_rl.py" beforeDir="false" afterPath="$PROJECT_DIR$/f110_env_rl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inference.py" beforeDir="false" afterPath="$PROJECT_DIR$/inference.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/4_256/skir_bootstrap_1m_larger_model.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/maps/skir_blocked/skir_blocked_map.pgm" beforeDir="false" afterPath="$PROJECT_DIR$/maps/skir_blocked/skir_blocked_map.pgm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ppo_continuous.py" beforeDir="false" afterPath="$PROJECT_DIR$/ppo_continuous.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/skir_bootstrap_1m_larger_model.pkl" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +56,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "D:/Courses/ESE 650/Final Project/ESE-650-Final-Project/f110_env_rl_old.py",
+    "last_opened_file_path": "D:/Lab/MPC/MPC",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
