@@ -23,3 +23,15 @@ class WaypointLoader:
 def pi_2_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
+
+def waypoints_dir_correction(map_name, raceline):
+    waypoints = np.array(raceline)
+
+    # LQR code might help
+    if map_name == 'skir':
+        waypoints[:, 3] += np.pi / 2  # turn 90° anti-clockwise
+
+    return waypoints
+
+
+

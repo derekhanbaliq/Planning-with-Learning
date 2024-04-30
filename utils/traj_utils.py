@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 def get_front_traj(obs, profile, predict_time=2.0):
     waypoints = np.array([profile.x, profile.y]).T
     ref_speed = profile.v
+    ref_heading = profile.θ
     # ref_curvature = profile.γ
     num_waypoints = waypoints.shape[0]
 
@@ -29,7 +30,7 @@ def get_front_traj(obs, profile, predict_time=2.0):
         # suppose anti-clockwise
         i = 0 if i == num_waypoints - 1 else i + 1
         t += profile.unit_dist / ref_speed[i]  # i -> i + 1
-        traj.append(np.hstack((i, waypoints[i], ref_speed[i])))
+        traj.append(np.hstack((i, waypoints[i], ref_speed[i], ref_heading[i])))
 
     traj = np.array(traj)
 
@@ -42,7 +43,7 @@ def get_interpolated_traj_with_horizon(traj, h):
     steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)
 
     h_traj = []
-    for i in range(1, traj.shape[1]):  # x, y, v
+    for i in range(1, traj.shape[1]):  # x, y, v, θ
         val = traj[:, i]
         interp_func = interp1d(steps, val.flatten(), kind='cubic')
         new_steps = np.linspace(start=0, stop=num_points, num=h, endpoint=True)
@@ -116,7 +117,8 @@ def global_to_local(obs, global_data):
     local_coord = np.transpose(np.linalg.inv(H) @ global_coord.T)
     # print(local_coord)
 
-    local_data = np.hstack((local_coord[:, :2], global_data[:, 2].reshape(global_data.shape[0], 1)))  # stack v
+    local_data = np.hstack((local_coord[:, :2], global_data[:, 2].reshape(global_data.shape[0], 1),
+                            global_data[:, 3].reshape(global_data.shape[0], 1)))  # stack v & theta
     # print(local_data)
 
     return local_data
@@ -133,7 +135,8 @@ def local_to_global(obs, local_data):
     global_coord = np.transpose(H @ local_coord.T)
     # print(local_coord)
 
-    global_data = np.hstack((global_coord[:, :2], local_data[:, 2].reshape(local_data.shape[0], 1)))  # stack v
+    global_data = np.hstack((global_coord[:, :2], local_data[:, 2].reshape(local_data.shape[0], 1),
+                             local_data[:, 3].reshape(local_data.shape[0], 1)))  # stack v and theta
     # print(global_data)
 
     return global_data
