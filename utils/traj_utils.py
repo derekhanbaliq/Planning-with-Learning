@@ -94,10 +94,10 @@ def densify_offset_traj(offset_traj, intep_num=80):
     num_points = offset_traj.shape[0]  # horizon
     steps = np.linspace(start=0, stop=num_points, num=num_points, endpoint=True)  # index, 0 ~ 10
 
-    profile = np.zeros((intep_num, 3))
-    for i in range(3):  # offset_traj.shape[1] = 3, [x, y, v]
+    profile = np.zeros((intep_num, 4))
+    for i in range(4):  # offset_traj.shape[1] = 4, [x, y, v, theta]
         val = offset_traj[:, i]
-        interp_func = interp1d(steps, val.flatten(), kind='cubic')
+        interp_func = interp1d(steps, val.flatten(), kind='linear')
         new_steps = np.linspace(start=0, stop=num_points,
                                 num=intep_num, endpoint=False)  # even at 8m/s, the unit step is 0.2m
         profile[:, i] = np.array(interp_func(new_steps))

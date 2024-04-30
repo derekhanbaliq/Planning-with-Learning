@@ -218,10 +218,19 @@ class KMPCController:
         # speed, orientation, position = self.model.get_general_states(x0)  # v, yaw, [x, y]
         # interpolated waypoints for ref traj - can be a great visualization tool for debugging waypoint calculation
         # ref_path = self.calc_ref_trajectory(position, orientation, speed, path)
-        ref_path = offset_traj
+        ref_yaw = offset_traj[:, -1]
+        ref_yaw[ref_yaw - states[3] > 5.0] = np.abs(
+            ref_yaw[ref_yaw - states[3] > 5.0] - (2 * np.pi)
+        )
+        ref_yaw[ref_yaw - states[3] < -5.0] = np.abs(
+            ref_yaw[ref_yaw - states[3] < -5.0] + (2 * np.pi)
+        )
+        refined_offset_traj = np.hstack((offset_traj[:, :3], ref_yaw.reshape((-1, 1))))
+        # print(refined_offset_traj.shape)
+        self.rlmpc_ref_path = refined_offset_traj.T
 
         # Solve the Linear MPC Control problem
-        self.input_o, states_output, state_predict = self.linear_mpc_control(ref_path, x0, self.input_o)
+        self.input_o, states_output, state_predict = self.linear_mpc_control(self.rlmpc_ref_path, x0, self.input_o)
 
         # Steering Output: First entry of the MPC steering angle output vector in degree
         u = self.input_o[:, 0]
@@ -232,7 +241,7 @@ class KMPCController:
         oy = states_output[1]  # a series of solved x & y
 
         # solved steering & speed for next step, ref / predicted / solved series of x & y, u[0] for ext-KMPC
-        return steering, speed, ref_path[0], ref_path[1], state_predict[0], state_predict[1], ox, oy, u[0]
+        return steering, speed, self.rlmpc_ref_path[0], self.rlmpc_ref_path[1], state_predict[0], state_predict[1], ox, oy, u[0]
         # return steering, speed, mpc_ref_path_x, mpc_ref_path_y, mpc_pred_x, mpc_pred_y, mpc_ox, mpc_oy, a
 
     def get_reference_trajectory(self, predicted_speeds, dist_from_segment_start, idx, waypoints):
@@ -287,7 +296,7 @@ class KMPCController:
         _, dist, _, _, ind = nearest_point(np.array([position[0], position[1]]), path[:, (1, 2)])
 
         # get interpolated waypoints for reference
-        reference = self.get_reference_trajectory(np.ones(self.config.TK) * abs(speed), dist, ind, path)  # N x 4 data
+        reference = self.get_reference_trajectory(np.ones(self.config.TK) * abs(speed), dist, ind, path)  # 4 x (h + 1)
 
         # TODO: to be improved
         # check the yaw angle difference is over 5 or not, to avoid the abrupt 2π change (≈ 2π but < 2π)

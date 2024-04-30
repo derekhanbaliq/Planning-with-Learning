@@ -75,7 +75,7 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
-    init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
+    init_pos = np.array([[5.0, 0.0, 0.0]])  # !!!! fixed init or not
 
     obs, _, done, _ = env.reset(init_pos)
 
@@ -111,7 +111,7 @@ def main():
             offset_traj = local_to_global(obs, local_offset_traj)
             offset_traj = np.vstack((np.array([[obs['poses_x'][0], obs['poses_y'][0], 2.0, obs['poses_theta'][0]]]),
                                      offset_traj))  # add car pose as the first point
-            dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v]
+            dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v, tehta]
             lookahead_point_profile = get_lookahead_point(obs, dense_offset_traj, lookahead_dist=rl_env.lookahead_dist)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.fixed_speed)
 
@@ -180,8 +180,7 @@ def main():
             # add offsets on horizon traj & densify offset traj to 80 points & get lookahead point & pure pursuit
             local_offset_traj = get_offset_traj(local_horizon_traj, offset)
             offset_traj = local_to_global(obs, local_offset_traj)
-            offset_traj = np.vstack((np.array([[obs['poses_x'][0], obs['poses_y'][0], 2.0, obs['poses_theta'][0]]]),
-                                     offset_traj))  # add car pose as the first point
+            mpc_offset_traj = densify_offset_traj(offset_traj, intep_num=11)
 
             if int(lap_time * 100) % control_period == 0:  # 50 ms
                 veh_state = np.array([env.sim.agents[0].state[0],
@@ -189,7 +188,7 @@ def main():
                                       env.sim.agents[0].state[3],  # vx
                                       env.sim.agents[0].state[4],  # yaw angle
                                       ])
-                steering, speed, ref_path_x, ref_path_y, pred_x, pred_y, mpc_ox, mpc_oy, a = controller.rl_control(veh_state, offset_traj.T)
+                steering, speed, ref_path_x, ref_path_y, pred_x, pred_y, mpc_ox, mpc_oy, a = controller.rl_control(veh_state, mpc_offset_traj)
                 renderer.offset_traj = np.array([ref_path_x, ref_path_y]).T  # red
                 renderer.horizon_traj = np.array([pred_x, pred_y]).T  # yellow
 
