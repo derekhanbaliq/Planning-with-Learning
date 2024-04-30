@@ -27,7 +27,7 @@ from utils.waypoint_loader import WaypointLoader, pi_2_pi, waypoints_dir_correct
 
 def main():
     method = 'kinematic_mpc'  # pure_pursuit, lqr_steering, lqr_steering_speed, kinematic_mpc
-    rl_planner = False  # enable if you use RL planner
+    rl_planner = True  # enable if you use RL planner
 
     # load map & waypoints
     map_name = 'skir'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
@@ -82,8 +82,8 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108)
     model = Agent(rl_env)
-    # model.load_state_dict(torch.load(f'models/4_256/skir_bootstrap_1m_larger_model.pkl'))  # !!!! modify load model
-    model.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))
+    model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
+    # model.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -157,7 +157,7 @@ def main():
                 renderer.horizon_traj = np.array([pred_x, pred_y]).T  # yellow
 
         elif method == 'kinematic_mpc' and rl_planner:
-            # UNDER HEAVY DEVELOPMENT!
+            # UNDER HEAVY DEVELOPMENT!!!!
 
             # lidar data for further usage
             downsampled_lidar_scan = downsample_lidar_scan(obs['scans'][0].flatten(), rl_env.num_lidar_scan).flatten()
