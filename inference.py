@@ -75,15 +75,15 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
-    init_pos = np.array([[5.0, 0.0, 0.0]])  # !!!! fixed init or not
+    # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
 
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
-                       num_lidar_scan=108)
+                       num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
-    # model.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))
+    # model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
+    model.load_state_dict(torch.load(f'skir_bt_1m_mpc.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -111,7 +111,7 @@ def main():
             offset_traj = local_to_global(obs, local_offset_traj)
             offset_traj = np.vstack((np.array([[obs['poses_x'][0], obs['poses_y'][0], 2.0, obs['poses_theta'][0]]]),
                                      offset_traj))  # add car pose as the first point
-            dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v, tehta]
+            dense_offset_traj = densify_offset_traj(offset_traj)  # [x, y, v, theta]
             lookahead_point_profile = get_lookahead_point(obs, dense_offset_traj, lookahead_dist=rl_env.lookahead_dist)
             steering, speed = controller.rl_control(obs, lookahead_point_profile, max_speed=rl_env.fixed_speed)
 
@@ -157,8 +157,6 @@ def main():
                 renderer.horizon_traj = np.array([pred_x, pred_y]).T  # yellow
 
         elif method == 'kinematic_mpc' and rl_planner:
-            # UNDER HEAVY DEVELOPMENT!!!!
-
             # lidar data for further usage
             downsampled_lidar_scan = downsample_lidar_scan(obs['scans'][0].flatten(), rl_env.num_lidar_scan).flatten()
             lidar_data = get_lidar_data(downsampled_lidar_scan, obs['poses_x'], obs['poses_y'], obs['poses_theta'])
@@ -221,7 +219,6 @@ def main():
             steering, speed = controller.control(obs)
 
         print("steering = {}, speed = {}".format(round(steering, 4), round(speed, 4)))
-
         obs, time_step, done, _ = env.step(np.array([[steering, speed]]))
         lap_time += time_step
         env.render(mode='human')
