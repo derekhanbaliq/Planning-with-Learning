@@ -83,7 +83,7 @@ def main():
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
     # model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
-    model.load_state_dict(torch.load(f'skir_bt_1m_mpc.pkl'))
+    model.load_state_dict(torch.load(f'skir_bt_2m_mpc.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
