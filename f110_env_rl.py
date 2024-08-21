@@ -83,7 +83,7 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 1.0 if self.ctrl_method == 'kinematic_mpc' else 2.0   # get waypoints in coming seconds
+        self.predict_time = 1.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
         self.fixed_speed = 2.0
         if self.ctrl_method == 'pure_pursuit':
             self.lookahead_dist = 0.8

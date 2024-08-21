@@ -45,7 +45,7 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
                         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=2000000,  # !!!! 10 million
+    parser.add_argument("--total-timesteps", type=int, default=1000000,  # !!!! 1 million
                         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
                         help="the learning rate of the optimizer")
@@ -403,11 +403,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 20)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_bt_2m_mpc_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'skir_bt_mpc_1s_1m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_bt_2m_mpc.pkl')  # !!!! change name accordingly
+    model_path = Path(f'skir_bt_mpc_1s_1m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()

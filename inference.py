@@ -26,8 +26,8 @@ from utils.waypoint_loader import WaypointLoader, pi_2_pi, waypoints_dir_correct
 
 
 def main():
-    method = 'kinematic_mpc'  # pure_pursuit, lqr_steering, lqr_steering_speed, kinematic_mpc
-    rl_planner = True  # enable if you use RL planner
+    method = 'kinematic_mpc'  # !!!! pure_pursuit, lqr_steering, lqr_steering_speed, kinematic_mpc
+    rl_planner = True  # !!!! enable if you use RL planner
 
     # load map & waypoints
     map_name = 'skir'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
@@ -83,7 +83,7 @@ def main():
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
     # model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
-    model.load_state_dict(torch.load(f'skir_bt_2m_mpc.pkl'))
+    model.load_state_dict(torch.load(f'skir_bt_mpc_1s_2m.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
@@ -129,8 +129,8 @@ def main():
                                                 (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
             # print("offset traj index:", filtered_traj_indices.shape)
             # print(RaceCar.scan_simulator.map_img.shape)
-            print("number of overlapped points =", np.count_nonzero(
-                RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0))
+            # print("number of overlapped points =", np.count_nonzero(
+            #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0))
             all_points = []
             for i in range(offset_traj.shape[0] - 1):
                 line_points = bresenham_line_point(offset_traj[i, :], offset_traj[i + 1, :])
