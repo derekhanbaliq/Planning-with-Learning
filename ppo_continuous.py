@@ -45,11 +45,11 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
                         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=10000000,  # !!!! 10 million
+    parser.add_argument("--total-timesteps", type=int, default=1000000,  # !!!! 1 million
                         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
                         help="the learning rate of the optimizer")
-    parser.add_argument("--num-envs", type=int, default=10,  # !!!! multi-thread envs 1 million for each env
+    parser.add_argument("--num-envs", type=int, default=2,  # !!!! multi-thread envs 1 million for each env
                         help="the number of parallel game environments")
     parser.add_argument("--num-steps", type=int, default=2048,
                         help="the number of steps to run in each environment per policy rollout")
@@ -81,12 +81,14 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir_blocked",  # !!!! skir for bt, skir_blocked for overfitting
+    parser.add_argument("--map-name", type=str, default="skir",  # !!!! skir for bt, skir_blocked for overfitting
                         help="the map of the environment")
     parser.add_argument("--num-obstacles", type=int, default=0,  # !!!! use 0 for overfitting
                         help="number of randomly generated obstacles")
     parser.add_argument("--num-lidar-scan", type=int, default=108,
                         help="number of randomly generated obstacles")
+    parser.add_argument("--ctrl-method", type=str, default='kinematic_mpc',  # !!!! kinematic_mpc for this branch
+                        help="control method we are going to use")
 
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
@@ -96,9 +98,10 @@ def parse_args():
     return args
 
 
-def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name, num_obstacles, num_lidar_scan):
+def make_env(env_id, idx, capture_video, run_name, gamma, render_flag, map_name, num_obstacles, num_lidar_scan, ctrl_method):
     def thunk():
-        env = F110RLEnv(render=render_flag, map_name=map_name, num_obstacles=num_obstacles, num_lidar_scan=num_lidar_scan)
+        env = F110RLEnv(render=render_flag, map_name=map_name, num_obstacles=num_obstacles,
+                        num_lidar_scan=num_lidar_scan, ctrl_method=ctrl_method)
         # if capture_video:
         #     env.f110.add_render_callback(env.opponent_renderer.render_waypoints)
         #     env.f110.add_render_callback(env.main_renderer.render_waypoints)
@@ -215,12 +218,12 @@ if __name__ == "__main__":
     # env setup
     envs = gym.vector.SyncVectorEnv(
         [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, args.render, args.map_name,
-                  args.num_obstacles, args.num_lidar_scan) for i in range(args.num_envs)]
+                  args.num_obstacles, args.num_lidar_scan, args.ctrl_method) for i in range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    agent.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))
+    # agent.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))
     # agent.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))  # !!!! 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
@@ -400,11 +403,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 20)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_obs_derek_10m_2obs_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'skir_bt_mpc_1s_1m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_obs_derek_10m_2obs.pkl')  # !!!! change name accordingly
+    model_path = Path(f'skir_bt_mpc_1s_1m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
