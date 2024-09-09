@@ -1,4 +1,4 @@
-# Planning-with-Learning
+# Planning with Learning
 
 End-to-end approaches with RL and IL have gained increasing popularity in autonomous driving. However, they do not involve explicit reasoning like classic robotics workflow, nor planning with horizons, leading strategies implicit and myopic. 
 
