@@ -1,6 +1,12 @@
-# ESE-650-Final-Project
+# Planning-with-Learning
 
-TODO: Project Intro
+End-to-end approaches with RL and IL have gained increasing popularity in autonomous driving. However, they do not involve explicit reasoning like classic robotics workflow, nor planning with horizons, leading strategies implicit and myopic. 
+
+In this project, we introduce our trajectory planning method that uses 
+BC for path-tracking and PPO bootstrapped by BC for static obstacle nudging. 
+It outputs lateral offset values to adjust the given reference trajectory, and performs modified path for different controllers. 
+
+Our experimental results show that the algorithm can do path-tracking that mimics the expert performance, and avoiding collision to fixed obstacles by trial and errors. This method makes a good attempt at planning with learning-based methods in trajectory planning problems of autonomous driving. 
 
 ## Setup
 
@@ -22,13 +28,7 @@ Install pytorch and Cuda. Please check [official installation](https://pytorch.o
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  # for Derek's PC
 ```
 
-Test your environment.
-```bash
-python test.py  # check if cuda is available
-python main.py  # check if f1tenth_gym is working
-```
-
-To run [cleanrl](https://github.com/vwxyzjn/cleanrl) for studying, config a new env for the cloned repo. **Please check the repo for detailed instruction.**  
+To play around [cleanrl](https://github.com/vwxyzjn/cleanrl), config a new env for the cloned repo. **Please check the [official repo](https://github.com/vwxyzjn/cleanrl) for detailed instruction.**  
 ```bash
 conda create -n clean-rl python=3.8
 conda activate clean-rl
@@ -41,10 +41,17 @@ tensorboard --logdir runs  # open another terminal to see the training process
 
 Train your model using
 ```bash
-python ppo_continuous.py --total-timesteps 50000  # for simplicity
+python ppo_continuous.py --total-timesteps 1000000  # add necessary arguments for example
 tensorboard --logdir runs  # enable visualization in another terminal
 ```
+Please modify arguments in ppo_continuous.py and f110_env_rl.py for expected config. 
+
 Test your model using
 ```bash
 python inference.py
 ```
+Please modify arguments in inference.py to match the validation setup. 
+
+## Citing
+
+TBD
