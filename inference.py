@@ -30,7 +30,7 @@ def main():
     rl_planner = True  # !!!! enable if you use RL planner
 
     # load map & waypoints
-    map_name = 'skir_blocked'  # levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir'  # !!!! levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -83,7 +83,7 @@ def main():
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
     # model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
-    model.load_state_dict(torch.load(f'skir_obs_pp_1s_10m_8.pkl'))
+    model.load_state_dict(torch.load(f'bt_2s_pp_2m.pkl'))
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:

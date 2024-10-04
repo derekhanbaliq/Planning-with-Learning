@@ -225,7 +225,8 @@ if __name__ == "__main__":
     agent = Agent(envs).to(device)
     # agent.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))
     # agent.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))  # !!!! 回锅肉！
-    agent.load_state_dict(torch.load(f'skir_bt_pp_1s_1m.pkl'))
+    agent.load_state_dict(torch.load(f'bt_2s_pp_2m.pkl'))
+    # agent.load_state_dict(torch.load(f'skir_bt_pp_1s_2m.pkl'))
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -404,11 +405,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 20)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_obs_pp_1s_10m_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'nudging_4obs_2s_10m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_obs_pp_1s_10m.pkl')  # !!!! change name accordingly
+    model_path = Path(f'nudging_4obs_2s_10m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
