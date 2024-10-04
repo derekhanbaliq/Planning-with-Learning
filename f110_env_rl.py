@@ -48,7 +48,8 @@ class F110RLEnv(F110Env):
 
         self.waypoints = WaypointLoader(map_name, csv_data)
         if self.ctrl_method == 'pure_pursuit':
-            self.controller = PurePursuit(self.waypoints)
+            self.lookahead_dist = 1.0  # !!!!
+            self.controller = PurePursuit(self.waypoints, self.lookahead_dist)
         elif self.ctrl_method == 'kinematic_mpc':
             model_config = MPCConfig_F110()
             kmpc_waypoints = waypoints_dir_correction(map_name, csv_data)
@@ -83,10 +84,8 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 2.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
+        self.predict_time = 1.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
         self.fixed_speed = 2.0
-        if self.ctrl_method == 'pure_pursuit':
-            self.lookahead_dist = 0.8
         self.offset = [0.5] * self.horizon
         self.steering = 0.0
         self.speed = 0.0
@@ -164,8 +163,8 @@ class F110RLEnv(F110Env):
         if self.ctrl_method == 'pure_pursuit':
             self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0],
                                                      self.fixed_speed, self.obs['poses_theta'][0]]]), self.offset_traj))
-            dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta]
-            # dense_offset_traj = densify_offset_traj(self.horizon_traj)  # !!!! for bootstrap only! -> Behavioral Cloning
+            # dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta] for obstacle nudging
+            dense_offset_traj = densify_offset_traj(self.horizon_traj)  # !!!! for bootstrap only! -> Behavioral Cloning
             lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj,
                                                           lookahead_dist=self.lookahead_dist)
             self.steering, self.speed = self.controller.rl_control(self.obs, lookahead_point_profile,
@@ -212,21 +211,21 @@ class F110RLEnv(F110Env):
 
         # !!!! modify your reward
         # derek's reward for bootstrapping
-        # reward = 100 * step_time
-        # reward -= 1 * np.linalg.norm(offset, ord=2)
-        # if super().current_obs['collisions'][0] == 1:
-        #     reward -= 1000
-
-        # !!!! modify your reward
-        # derek's reward for obstacle avoidance
         reward = 100 * step_time
-        # reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        first_diff = (offset[1:] - offset[:-1])
-        second_diff = first_diff[1:] - first_diff[:-1]
-        reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
-        reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
-        reward -= 0.05 * np.count_nonzero(
-            RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
+        reward -= 1 * np.linalg.norm(offset, ord=2)
+        if super().current_obs['collisions'][0] == 1:
+            reward -= 1000
+
+        # # !!!! modify your reward
+        # # derek's reward for obstacle avoidance
+        # reward = 100 * step_time
+        # # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+        # first_diff = (offset[1:] - offset[:-1])
+        # second_diff = first_diff[1:] - first_diff[:-1]
+        # reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
+        # reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
+        # reward -= 0.05 * np.count_nonzero(
+        #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
         if super().current_obs['collisions'][0] == 1:
             reward -= 10
 

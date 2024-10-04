@@ -38,7 +38,7 @@ def main():
     # load controller
     controller = None
     if method == 'pure_pursuit':
-        controller = PurePursuit(waypoints)
+        controller = PurePursuit(waypoints, L=1.0)  # !!!!
     elif method == 'lqr_steering':
         controller = LQRSteeringController(waypoints)
     elif method == 'lqr_steering_speed':
@@ -82,8 +82,7 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
-    # model.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))  # !!!! modify load model
-    model.load_state_dict(torch.load(f'bt_2s_pp_2m.pkl'))
+    model.load_state_dict(torch.load(f'bt_1s_pp_2m.pkl'))  # !!!! modify load model
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
