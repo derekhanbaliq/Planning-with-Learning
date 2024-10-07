@@ -1,12 +1,13 @@
 # Planning with Learning
 
-End-to-end approaches with RL and IL have gained increasing popularity in autonomous driving. However, they do not involve explicit reasoning like classic robotics workflow, nor planning with horizons, leading strategies implicit and myopic. 
+In autonomous driving, end-to-end methods utilizing Imitation Learning (IL) and Reinforcement Learning (RL) are becoming more and more common. 
+However, they do not involve explicit reasoning like classic robotics workflow and planning with horizons, resulting in strategies implicit and myopic. 
 
-In this project, we introduce our trajectory planning method that uses 
-BC for path-tracking and PPO bootstrapped by BC for static obstacle nudging. 
-It outputs lateral offset values to adjust the given reference trajectory, and performs modified path for different controllers. 
+In this paper, we introduce a path planning method that uses 
+Behavioral Cloning (BC) for path-tracking and Proximal Policy Optimization (PPO) for static obstacle nudging. 
+It outputs lateral offset values to adjust the given reference waypoints and performs modified path for different controllers. 
 
-Our experimental results show that the algorithm can do path-tracking that mimics the expert performance, and avoiding collision to fixed obstacles by trial and errors. This method makes a good attempt at planning with learning-based methods in trajectory planning problems of autonomous driving. 
+Experimental results show that the algorithm can do path following that mimics the expert performance of path-tracking controllers, and avoid collision to fixed obstacles. The method makes a good attempt at planning with learning-based methods in path planning problems of autonomous driving. 
 
 ## Setup
 
@@ -52,6 +53,4 @@ python inference.py
 ```
 Please modify arguments in inference.py to match the validation setup. 
 
-## Citing
-
-TBD
+Please check the youtube video [playlist](https://www.youtube.com/playlist?list=PLxQD__8MmsvBaEOhgLCPge5m_NwwU4zfs) for further details. 

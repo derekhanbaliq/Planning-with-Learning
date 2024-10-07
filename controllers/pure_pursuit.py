@@ -7,14 +7,14 @@ class PurePursuit:
     Implement Pure Pursuit on the car
     """
 
-    def __init__(self, waypoints):
+    def __init__(self, waypoints, L):
         self.is_clockwise = False
 
         self.waypoints = np.array([waypoints.x, waypoints.y]).T
         self.numWaypoints = self.waypoints.shape[0]
         self.ref_speed = waypoints.v
 
-        self.L = 1.5
+        self.L = L  # 1.5
         self.steering_gain = 0.5
 
     def control(self, obs, agent=1, offset=None):

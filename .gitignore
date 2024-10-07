@@ -3,12 +3,9 @@ __pycache__
 *.pyc
 *.nbc
 *.nbi
-examples
 gym/f110_gym.egg-info
 gym/gym_env
 runs
-utils/test_add_lateral_offset.py
-f110_rlenv_reference.py
-path_tracking_main.py
-rl_main.py
-*.pkl
+plot
+models
+pkls

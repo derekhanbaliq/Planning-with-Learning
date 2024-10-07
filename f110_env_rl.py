@@ -2,7 +2,7 @@
 
 """
     F1TENTH gym environment of the RL planner
-    Author: Derek Zhou, Biao Wang, Tian Tan
+    Author: Derek Zhou, Biao Wang
 """
 
 import os
@@ -24,6 +24,8 @@ from utils.waypoint_loader import WaypointLoader, waypoints_dir_correction
 
 class F110RLEnv(F110Env):
     def __init__(self, **kwargs):
+        self.usage = 'nudge'  # !!!! bt or nudge
+
         # load keyword arguments
         self.render_flag = kwargs['render']
         map_name = kwargs['map_name']  # levine_2nd, skir
@@ -48,12 +50,13 @@ class F110RLEnv(F110Env):
 
         self.waypoints = WaypointLoader(map_name, csv_data)
         if self.ctrl_method == 'pure_pursuit':
-            self.controller = PurePursuit(self.waypoints)
+            self.lookahead_dist = 0.8  # !!!!
+            self.controller = PurePursuit(self.waypoints, self.lookahead_dist)
         elif self.ctrl_method == 'kinematic_mpc':
             model_config = MPCConfig_F110()
             kmpc_waypoints = waypoints_dir_correction(map_name, csv_data)
             self.controller = KMPCController(model=KinematicModel(config=model_config), waypoints=kmpc_waypoints,
-                                        config=model_config)
+                                             config=model_config)
             self.control_period = 10  # Hz
         self.renderer = Renderer(self.waypoints)
         if self.render_flag:
@@ -83,11 +86,9 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 1.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
+        self.predict_time = 2.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0 or 1.0   # !!!!
         self.fixed_speed = 2.0
-        if self.ctrl_method == 'pure_pursuit':
-            self.lookahead_dist = 0.8
-        self.offset = [0.5] * self.horizon  # self.offset = [0.5] * self.horizon
+        self.offset = [0.5] * self.horizon
         self.steering = 0.0
         self.speed = 0.0
 
@@ -134,7 +135,7 @@ class F110RLEnv(F110Env):
         init_index = np.random.randint(0, self.waypoints.x.shape[0])
         init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
                              self.waypoints.θ[init_index]]).reshape((1, -1))
-        # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
+        # init_pos = np.array([[0.0, 0.0, 0.0]])  # fixed init or not
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
@@ -164,10 +165,15 @@ class F110RLEnv(F110Env):
         if self.ctrl_method == 'pure_pursuit':
             self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0],
                                                      self.fixed_speed, self.obs['poses_theta'][0]]]), self.offset_traj))
-            # dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta]
-            dense_offset_traj = densify_offset_traj(self.horizon_traj)  # !!!! for bootstrap only! -> Behavioral Cloning
-            lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj, lookahead_dist=self.lookahead_dist)
-            self.steering, self.speed = self.controller.rl_control(self.obs, lookahead_point_profile, max_speed=self.fixed_speed)
+            if self.usage == 'nudge':
+                dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta] for obstacle nudging
+            elif self.usage == 'bt':
+                # for bootstrap only! -> Behavioral Cloning
+                dense_offset_traj = densify_offset_traj(self.horizon_traj)
+            lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj,
+                                                          lookahead_dist=self.lookahead_dist)
+            self.steering, self.speed = self.controller.rl_control(self.obs, lookahead_point_profile,
+                                                                   max_speed=self.fixed_speed)
         elif self.ctrl_method == 'kinematic_mpc':
             mpc_offset_traj = densify_offset_traj(self.offset_traj, intep_num=11)
             if int(self.lap_time * 100) % self.control_period == 0:  # 50 ms
@@ -176,13 +182,15 @@ class F110RLEnv(F110Env):
                                       self.sim.agents[0].state[3],  # vx
                                       self.sim.agents[0].state[4],  # yaw angle
                                       ])
-                self.steering, self.speed, ref_path_x, ref_path_y, pred_x, pred_y, mpc_ox, mpc_oy, a = self.controller.rl_control(veh_state, mpc_offset_traj)
+                self.steering, self.speed, ref_path_x, ref_path_y, pred_x, pred_y, mpc_ox, mpc_oy, a = self.controller.rl_control(
+                    veh_state, mpc_offset_traj)
                 # renderer.offset_traj = np.array([ref_path_x, ref_path_y]).T  # red
                 # renderer.horizon_traj = np.array([pred_x, pred_y]).T  # yellow
 
         # step function in race car, time step is k+1 now
         # print("steering = {}, speed = {}".format(round(self.steering, 4), round(self.speed, 4)))
-        self.obs, step_time, self.done, info = super().step(np.array([[self.steering, self.speed]]))  # not fixed for mpc
+        self.obs, step_time, self.done, info = super().step(
+            np.array([[self.steering, self.speed]]))  # not fixed for mpc
         self.lap_time += step_time
 
         # extract waypoints in predicted time & interpolate the front traj to get a 10-point-traj
@@ -206,33 +214,34 @@ class F110RLEnv(F110Env):
             (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols) &
             (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
 
-        # !!!! modify your reward
+        # modify your reward
         # derek's reward for bootstrapping
-        reward = 100 * step_time
-        reward -= 1 * np.linalg.norm(offset, ord=2)
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 1000
+        if self.usage == 'bt':
+            reward = 100 * step_time
+            reward -= 1 * np.linalg.norm(offset, ord=2)
+            if super().current_obs['collisions'][0] == 1:
+                reward -= 1000
 
-        # !!!! modify your reward
-        # derek's reward for obstacle avoidance
-        # reward = 100 * step_time
-        # # reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        # first_diff = (offset[1:] - offset[:-1])
-        # second_diff = first_diff[1:] - first_diff[:-1]
-        # reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
-        # reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
-        # reward -= 0.05 * np.count_nonzero(
-        #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
-        # if super().current_obs['collisions'][0] == 1:
-        #     reward -= 10
+        # modify your reward
+        # !!!! derek's reward for obstacle avoidance
+        if self.usage == 'nudge':
+            reward = 100 * step_time
+            # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+            first_diff = (offset[1:] - offset[:-1])
+            second_diff = first_diff[1:] - first_diff[:-1]
+            reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
+            reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
+            reward -= 0.05 * np.count_nonzero(
+                RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
+            if super().current_obs['collisions'][0] == 1:
+                reward -= 1000
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj
             if self.ctrl_method == 'pure_pursuit':
-                self.renderer.ahead_point = lookahead_point_profile[:2]   # [x, y]
+                self.renderer.ahead_point = lookahead_point_profile[:2]  # [x, y]
             # self.renderer.front_traj = self.front_traj
             self.renderer.horizon_traj = self.horizon_traj
             super().render('human')
 
         return network_obs, reward, self.done, info
-

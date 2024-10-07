@@ -45,11 +45,11 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="F1Tenth-Planner",
                         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=1000000,  # !!!! 1 million
+    parser.add_argument("--total-timesteps", type=int, default=10000000,  # !!!! bt ~ 1 or 2 million, nudging ~ 10 million
                         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
                         help="the learning rate of the optimizer")
-    parser.add_argument("--num-envs", type=int, default=2,  # !!!! multi-thread envs 1 million for each env
+    parser.add_argument("--num-envs", type=int, default=10,  # !!!! multi-thread envs 1 million for each env
                         help="the number of parallel game environments")
     parser.add_argument("--num-steps", type=int, default=2048,
                         help="the number of steps to run in each environment per policy rollout")
@@ -81,13 +81,13 @@ def parse_args():
     # parameters for rl planner
     parser.add_argument("--render", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, render will be enabled.")
-    parser.add_argument("--map-name", type=str, default="skir",  # !!!! skir for bt, skir_blocked for overfitting
+    parser.add_argument("--map-name", type=str, default="skir_blocked",  # !!!! skir for bt, skir_blocked for overfitting
                         help="the map of the environment")
-    parser.add_argument("--num-obstacles", type=int, default=0,  # !!!! use 0 for overfitting
+    parser.add_argument("--num-obstacles", type=int, default=0,
                         help="number of randomly generated obstacles")
     parser.add_argument("--num-lidar-scan", type=int, default=108,
                         help="number of randomly generated obstacles")
-    parser.add_argument("--ctrl-method", type=str, default='kinematic_mpc',  # !!!! kinematic_mpc for this branch
+    parser.add_argument("--ctrl-method", type=str, default='pure_pursuit',  # !!!! kinematic_mpc for this branch
                         help="control method we are going to use")
 
     args = parser.parse_args()
@@ -127,7 +127,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     return layer
 
 
-# !!!! modify layer numbers & number of neurons of each layer
+# modify layer numbers & number of neurons of each layer
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
@@ -223,8 +223,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    # agent.load_state_dict(torch.load(f'models/skir_bootstrap_1m_debugged.pkl'))
-    # agent.load_state_dict(torch.load(f'skir_obs_derek_10m_3.pkl'))  # !!!! 回锅肉！
+    agent.load_state_dict(torch.load(f'pkls/bt_2s_pp_2m.pkl'))  # !!!! 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -244,7 +243,7 @@ if __name__ == "__main__":
     num_updates = args.total_timesteps // args.batch_size
     video_filenames = set()
     high_reward = float('-inf')
-    save_count = 0
+    save_count = 1
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -403,11 +402,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 20)) == 0:
-            torch.save(agent.state_dict(), Path(f'skir_bt_mpc_1s_1m_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'nudge_2s_2obs_10m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'skir_bt_mpc_1s_1m.pkl')  # !!!! change name accordingly
+    model_path = Path(f'nudge_2s_2obs_10m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()
