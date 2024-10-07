@@ -2,7 +2,7 @@
 
 """
     F1TENTH gym environment of the RL planner
-    Author: Derek Zhou, Biao Wang, Tian Tan
+    Author: Derek Zhou, Biao Wang
 """
 
 import os
@@ -24,6 +24,8 @@ from utils.waypoint_loader import WaypointLoader, waypoints_dir_correction
 
 class F110RLEnv(F110Env):
     def __init__(self, **kwargs):
+        self.usage = 'nudge'  # !!!! bt or nudge
+
         # load keyword arguments
         self.render_flag = kwargs['render']
         map_name = kwargs['map_name']  # levine_2nd, skir
@@ -48,7 +50,7 @@ class F110RLEnv(F110Env):
 
         self.waypoints = WaypointLoader(map_name, csv_data)
         if self.ctrl_method == 'pure_pursuit':
-            self.lookahead_dist = 1.0  # !!!!
+            self.lookahead_dist = 0.8  # !!!!
             self.controller = PurePursuit(self.waypoints, self.lookahead_dist)
         elif self.ctrl_method == 'kinematic_mpc':
             model_config = MPCConfig_F110()
@@ -84,7 +86,7 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 1.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
+        self.predict_time = 2.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
         self.fixed_speed = 2.0
         self.offset = [0.5] * self.horizon
         self.steering = 0.0
@@ -133,7 +135,7 @@ class F110RLEnv(F110Env):
         init_index = np.random.randint(0, self.waypoints.x.shape[0])
         init_pos = np.array([self.waypoints.x[init_index], self.waypoints.y[init_index],
                              self.waypoints.θ[init_index]]).reshape((1, -1))
-        # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
+        # init_pos = np.array([[0.0, 0.0, 0.0]])  # fixed init or not
 
         self.obs, _, self.done, _ = super().reset(init_pos)  # self.obs, _, self.done, _ = F110Env.reset(self,init_pos)
         self.lap_time = 0.0
@@ -163,8 +165,11 @@ class F110RLEnv(F110Env):
         if self.ctrl_method == 'pure_pursuit':
             self.offset_traj = np.vstack((np.array([[self.obs['poses_x'][0], self.obs['poses_y'][0],
                                                      self.fixed_speed, self.obs['poses_theta'][0]]]), self.offset_traj))
-            # dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta] for obstacle nudging
-            dense_offset_traj = densify_offset_traj(self.horizon_traj)  # !!!! for bootstrap only! -> Behavioral Cloning
+            if self.usage == 'nudge':
+                dense_offset_traj = densify_offset_traj(self.offset_traj)  # [x, y, v, theta] for obstacle nudging
+            elif self.usage == 'bt':
+                # for bootstrap only! -> Behavioral Cloning
+                dense_offset_traj = densify_offset_traj(self.horizon_traj)
             lookahead_point_profile = get_lookahead_point(self.obs, dense_offset_traj,
                                                           lookahead_dist=self.lookahead_dist)
             self.steering, self.speed = self.controller.rl_control(self.obs, lookahead_point_profile,
@@ -209,25 +214,27 @@ class F110RLEnv(F110Env):
             (all_indices[:, 1] < self.map_max_rows) & (all_indices[:, 0] < self.map_max_cols) &
             (all_indices[:, 1] >= 0) & (all_indices[:, 0] >= 0)]
 
-        # !!!! modify your reward
+        # modify your reward
         # derek's reward for bootstrapping
-        reward = 100 * step_time
-        reward -= 1 * np.linalg.norm(offset, ord=2)
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 1000
+        if self.usage == 'bt':
+            reward = 100 * step_time
+            reward -= 1 * np.linalg.norm(offset, ord=2)
+            if super().current_obs['collisions'][0] == 1:
+                reward -= 1000
 
-        # # !!!! modify your reward
-        # # derek's reward for obstacle avoidance
-        # reward = 100 * step_time
-        # # reward -= 0.1 * np.linalg.norm(offset, ord=2)
-        # first_diff = (offset[1:] - offset[:-1])
-        # second_diff = first_diff[1:] - first_diff[:-1]
-        # reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
-        # reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
-        # reward -= 0.05 * np.count_nonzero(
-        #     RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
-        if super().current_obs['collisions'][0] == 1:
-            reward -= 10
+        # modify your reward
+        # !!!! derek's reward for obstacle avoidance
+        if self.usage == 'nudge':
+            reward = 100 * step_time
+            # reward -= 0.1 * np.linalg.norm(offset, ord=2)
+            first_diff = (offset[1:] - offset[:-1])
+            second_diff = first_diff[1:] - first_diff[:-1]
+            reward -= 0.2 * np.linalg.norm(first_diff, ord=2)  # < 0.2
+            reward -= 0.1 * np.linalg.norm(second_diff, ord=2)  # < 0.2
+            reward -= 0.05 * np.count_nonzero(
+                RaceCar.scan_simulator.map_img[filtered_traj_indices[:, 1], filtered_traj_indices[:, 0]] == 0)  # < 0.5
+            if super().current_obs['collisions'][0] == 1:
+                reward -= 1000
 
         if self.render_flag:  # render update
             self.renderer.offset_traj = self.offset_traj

@@ -5,18 +5,36 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d727f57b-69a3-4230-8e70-00fa64089e34" name="Changes" comment="pull from main">
-      <change afterPath="$PROJECT_DIR$/deprecated/F1Tenth-Planner__ppo_continuous__1__1727966014/events.out.tfevents.1727966014.OMEN16-Derek.39968.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/F1Tenth-Planner__ppo_continuous__1__1728008479/events.out.tfevents.1728008479.OMEN16-Derek.43416.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/bt_1s_pp_1m/F1Tenth-Planner__ppo_continuous__1__1722196676/events.out.tfevents.1722196676.OMEN16-Derek.20392.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/bt_1s_pp_2m/F1Tenth-Planner__ppo_continuous__1__1722200825/events.out.tfevents.1722200825.OMEN16-Derek.29172.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_2obs_10m/F1Tenth-Planner__ppo_continuous__1__1727939496/events.out.tfevents.1727939496.OMEN16-Derek.25072.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_3obs_10m/F1Tenth-Planner__ppo_continuous__1__1727840389/events.out.tfevents.1727840389.OMEN16-Derek.15424.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_4obs_10m/F1Tenth-Planner__ppo_continuous__1__1727668712/events.out.tfevents.1727668712.OMEN16-Derek.27316.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/F1Tenth-Planner__ppo_continuous__1__1727966014/events.out.tfevents.1727966014.OMEN16-Derek.39968.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/F1Tenth-Planner__ppo_continuous__1__1728008479/events.out.tfevents.1728008479.OMEN16-Derek.43416.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/bt_1s_pp_1m/F1Tenth-Planner__ppo_continuous__1__1722196676/events.out.tfevents.1722196676.OMEN16-Derek.20392.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/bt_1s_pp_2m/F1Tenth-Planner__ppo_continuous__1__1722200825/events.out.tfevents.1722200825.OMEN16-Derek.29172.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/nudging_1s_bt_pp_1m_3obs_10m/F1Tenth-Planner__ppo_continuous__1__1727840389/events.out.tfevents.1727840389.OMEN16-Derek.15424.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/deprecated/nudging_1s_bt_pp_1m_4obs_10m/F1Tenth-Planner__ppo_continuous__1__1727668712/events.out.tfevents.1727668712.OMEN16-Derek.27316.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_1s_mpc_1m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_1s_mpc_2m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_1s_pp_1m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_1s_pp_2m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_2s_pp_1m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/bt_2s_pp_2m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/nudge_2s_4obs_10m.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/nudging_1s_3obs_10m_12.pkl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkls/nudging_1s_4obs_10m_8.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controllers/pure_pursuit.py" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/pure_pursuit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/F1Tenth-Planner__ppo_continuous__1__1727966014/events.out.tfevents.1727966014.OMEN16-Derek.39968.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/F1Tenth-Planner__ppo_continuous__1__1728008479/events.out.tfevents.1728008479.OMEN16-Derek.43416.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/bt_1s_pp_1m/F1Tenth-Planner__ppo_continuous__1__1722196676/events.out.tfevents.1722196676.OMEN16-Derek.20392.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/bt_1s_pp_2m/F1Tenth-Planner__ppo_continuous__1__1722200825/events.out.tfevents.1722200825.OMEN16-Derek.29172.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_2obs_10m/F1Tenth-Planner__ppo_continuous__1__1727939496/events.out.tfevents.1727939496.OMEN16-Derek.25072.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_3obs_10m/F1Tenth-Planner__ppo_continuous__1__1727840389/events.out.tfevents.1727840389.OMEN16-Derek.15424.0" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deprecated/nudging_1s_bt_pp_1m_4obs_10m/F1Tenth-Planner__ppo_continuous__1__1727668712/events.out.tfevents.1727668712.OMEN16-Derek.27316.0" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/f110_env_rl.py" beforeDir="false" afterPath="$PROJECT_DIR$/f110_env_rl.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inference.py" beforeDir="false" afterPath="$PROJECT_DIR$/inference.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maps/skir_blocked/skir_blocked_map.pgm" beforeDir="false" afterPath="$PROJECT_DIR$/maps/skir_blocked/skir_blocked_map.pgm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ppo_continuous.py" beforeDir="false" afterPath="$PROJECT_DIR$/ppo_continuous.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/lidar_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/lidar_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/traj_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/traj_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,28 +76,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "D:/Courses/ESE 650/Final Project/ESE-650-Final-Project/ppo_continuous_old.py",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "two.files.diff.last.used.file": "D:/Courses/ESE 650/Final Project/ESE-650-Final-Project/ppo_continuous_old.py",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Courses/ESE 650/Final Project/ESE-650-Final-Project/ppo_continuous_old.py&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;D:/Courses/ESE 650/Final Project/ESE-650-Final-Project/ppo_continuous_old.py&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Courses\ESE 650\Final Project\ESE-650-Final-Project" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.ppo_continuous">
+  <component name="RunManager" selected="Python.inference (1)">
     <configuration name="episodic_return" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="ESE-650-Final-Project" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -187,8 +205,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.ppo_continuous" />
         <item itemvalue="Python.inference (1)" />
+        <item itemvalue="Python.ppo_continuous" />
         <item itemvalue="Python.f110_env_rl" />
         <item itemvalue="Python.episodic_return" />
         <item itemvalue="Python.kmpc" />

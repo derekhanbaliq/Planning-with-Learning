@@ -1,6 +1,6 @@
 """
     helper functions for trajectories
-    Author: Derek Zhou, Biao Wang, Tian Tan
+    Author: Derek Zhou, Biao Wang
 """
 
 import numpy as np

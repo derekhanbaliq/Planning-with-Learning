@@ -1,6 +1,6 @@
 """
     inference for testing the algorithms
-    Author: Derek Zhou, Biao Wang, Tian Tan
+    Author: Derek Zhou, Biao Wang
     References: https://f1tenth-gym.readthedocs.io/en/v1.0.0/api/obv.html
                 https://github.com/f1tenth/f1tenth_gym/tree/main/examples
 """
@@ -30,7 +30,7 @@ def main():
     rl_planner = True  # !!!! enable if you use RL planner
 
     # load map & waypoints
-    map_name = 'skir'  # !!!! levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
+    map_name = 'skir_blocked'  # !!!! levine_2nd, skir, skir_blocked, Spielberg, MoscowRaceway, Catalunya
     map_path = os.path.abspath(os.path.join('maps', map_name))
     csv_data = np.loadtxt(map_path + '/' + map_name + '_raceline.csv', delimiter=';', skiprows=0)  # '_centerline.csv'
     waypoints = WaypointLoader(map_name, csv_data)
@@ -38,7 +38,7 @@ def main():
     # load controller
     controller = None
     if method == 'pure_pursuit':
-        controller = PurePursuit(waypoints, L=1.0)  # !!!!
+        controller = PurePursuit(waypoints, L=0.8)  # !!!!
     elif method == 'lqr_steering':
         controller = LQRSteeringController(waypoints)
     elif method == 'lqr_steering_speed':
@@ -75,14 +75,14 @@ def main():
     init_index = np.random.randint(0, waypoints.x.shape[0])
     init_pos = np.array([waypoints.x[init_index], waypoints.y[init_index], waypoints.θ[init_index]]).reshape((1, -1))
     # print("init index = {}, init pose = {}".format(init_index, init_pos))
-    # init_pos = np.array([[0.0, 0.0, 0.0]])  # !!!! fixed init or not
+    # init_pos = np.array([[0.0, 0.0, 0.0]])  # fixed init or not
 
     obs, _, done, _ = env.reset(init_pos)
 
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load(f'bt_1s_pp_2m.pkl'))  # !!!! modify load model
+    model.load_state_dict(torch.load(f'pkls/bt_2s_pp_2m.pkl'))  # !!!! modify load model
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:
