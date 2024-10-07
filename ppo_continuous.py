@@ -223,7 +223,7 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    agent.load_state_dict(torch.load(f'models/bt_2s_pp_1m.pkl'))  # !!!! 回锅肉！
+    agent.load_state_dict(torch.load(f'pkls/bt_2s_pp_2m.pkl'))  # !!!! 回锅肉！
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -402,11 +402,11 @@ if __name__ == "__main__":
                     video_filenames.add(filename)
                     
         if (update % int(num_updates / 20)) == 0:
-            torch.save(agent.state_dict(), Path(f'nudge_2s_4obs_10m_'+str(save_count)+'.pkl'))  # !!!! change name
+            torch.save(agent.state_dict(), Path(f'nudge_2s_2obs_10m_'+str(save_count)+'.pkl'))  # !!!! change name
             print("save model")
             save_count += 1
 
-    model_path = Path(f'nudge_2s_4obs_10m.pkl')  # !!!! change name accordingly
+    model_path = Path(f'nudge_2s_2obs_10m.pkl')  # !!!! change name accordingly
     torch.save(agent.state_dict(), model_path)
 
     envs.close()

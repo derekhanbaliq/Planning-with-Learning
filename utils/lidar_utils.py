@@ -1,6 +1,6 @@
 """
     helper functions for the lidar scan
-    Author: Derek Zhou, Biao Wang
+    Author: Derek Zhou, Biao Wang, Tian Tan
 """
 import numpy as np
 

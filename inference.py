@@ -82,7 +82,7 @@ def main():
     rl_env = F110RLEnv(render=False, map_name=map_name, num_obstacles=num_obstacles, obt_poses=obt_pose,
                        num_lidar_scan=108, ctrl_method=method)
     model = Agent(rl_env)
-    model.load_state_dict(torch.load(f'pkls/bt_2s_pp_2m.pkl'))  # !!!! modify load model
+    model.load_state_dict(torch.load(f'pkls/nudge_2s_4obs_10m.pkl'))  # !!!! modify load model
 
     while not done:
         if method == 'pure_pursuit' and rl_planner:

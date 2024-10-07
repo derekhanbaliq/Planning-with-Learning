@@ -86,7 +86,7 @@ class F110RLEnv(F110Env):
 
         # init params
         self.horizon = int(10)
-        self.predict_time = 2.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0   # !!!!
+        self.predict_time = 2.0  # if self.ctrl_method == 'kinematic_mpc' else 2.0 or 1.0   # !!!!
         self.fixed_speed = 2.0
         self.offset = [0.5] * self.horizon
         self.steering = 0.0
